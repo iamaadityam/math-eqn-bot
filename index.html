@@ -67,6 +67,12 @@
   .status{min-height:44px;text-align:center;font-size:17px;margin-top:10px}
   .status.ok{color:var(--good)} .status.err{color:var(--bad)}
   .status code{user-select:all}
+  .fieldbox{background:var(--panel);border-radius:8px;padding:8px 10px;margin:0 0 10px;font-size:13px}
+  .fieldhead{opacity:.85;margin-bottom:6px}
+  .frow{display:flex;align-items:center;gap:8px;margin:4px 0}
+  .frow b{min-width:34px;color:#7dffb0}
+  .frow input{flex:1;min-width:0;background:#fff;color:#111;border:2px solid var(--key);border-radius:5px;padding:6px 8px;font-size:16px;font-family:Consolas,monospace}
+  .frow.down{opacity:.4}
   .legend{display:flex;gap:14px;justify-content:center;font-size:13px;margin-top:6px;flex-wrap:wrap;opacity:.9}
   .legend i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:4px;vertical-align:-1px}
 
@@ -107,9 +113,14 @@
         <option value="ode2">y'' = f(x, y, y')</option>
       </select>
     </label>
-    <label>Enemies <input id="s-en" type="number" min="1" max="8" value="3"></label>
-    <label>Allies <input id="s-al" type="number" min="0" max="4" value="1"></label>
-    <label>Obstacles <input id="s-ob" type="number" min="0" max="14" value="6"></label>
+    <label title="What x means inside your equation">x is measured from
+      <select id="s-rel"><option value="abs">map origin (Graphwar)</option><option value="rel">the player</option></select>
+    </label>
+    <label>Enemies <input id="s-en" type="number" min="0" max="8" value="2"></label>
+    <label title="Enemies inside a derivative perimeter">Shields <input id="s-sh" type="number" min="0" max="4" value="1"></label>
+    <label title="Parry bots: enemies with a field that bends your shot back at you">Parry bots <input id="s-bt" type="number" min="0" max="3" value="1"></label>
+    <label title="Each ally deploys one assist field. You write its equation.">Allies <input id="s-al" type="number" min="0" max="12" value="2"></label>
+    <label>Obstacles <input id="s-ob" type="number" min="0" max="14" value="5"></label>
     <button id="b-new">New map</button>
     <button id="b-retry">Retry map</button>
   </div>
@@ -130,7 +141,9 @@
   <div class="legend">
     <span><i style="background:#e69a00"></i>You</span>
     <span><i style="background:#2a3fd0"></i>Enemy</span>
-    <span><i style="background:#1f9d55"></i>Ally (don't shoot!)</span>
+    <span><i style="background:#1f9d55"></i>Ally + assist field</span>
+    <span><i style="background:#c0392b"></i>Shield (derivative)</span>
+    <span><i style="background:#8e44ad"></i>Parry bot field</span>
     <span><i style="background:#2b2b33"></i>Obstacle</span>
   </div>
 
@@ -142,6 +155,11 @@
       <span class="off" id="off">+ 0.000</span>
     </div>
     <button id="fire">Fire!</button>
+  </div>
+
+  <div id="fields" class="fieldbox hidden">
+    <div class="fieldhead">Assist fields — one equation per ally. Inside a field: <code>x</code> = distance travelled in it, <code>y</code> = heading angle (rad, 0 = right, + = up). The result is how fast the shot turns (+ = left/up, − = right/down). Empty = no steering.</div>
+    <div id="fieldrows"></div>
   </div>
 
   <div class="pads">
@@ -207,13 +225,30 @@
     </table>
     <b>Tip:</b> to make a curve hit several points, add terms that vanish at the points you already have, e.g. <code>(x−a)(x−b)</code> is 0 at both a and b.
 
+    <h3>Special zones</h3>
+    <table>
+      <tr><td><span style="color:#ff7b6b"><b>Shield</b></span><br>red dashed circle</td>
+          <td>Around a shielded enemy. The first time your curve touches it, your curve is <b>replaced by its derivative</b> f′(x) — the slope function of what you typed —
+          lifted so it continues from the contact point (no jump). A parabola becomes a line, a sine becomes a cosine, a straight line becomes flat. Works in every mode
+          (in the differential modes the "curve" is the integrated path). Each shield triggers once per shot; the shield disappears when its enemy dies.</td></tr>
+      <tr><td><span style="color:#c58be0"><b>Parry bot</b></span><br>purple circle</td>
+          <td>A bot that doesn't attack — it defends. Its parry field sits in front of it. Anything that enters is <b>bent back toward you</b>, and your own shot can kill you or your allies.
+          Go around the field (over or under) to reach the bot behind it. Kill the bot and the field vanishes.</td></tr>
+      <tr><td><span style="color:#7dffb0"><b>Assist field</b></span><br>green dashed circle</td>
+          <td>Every ally deploys one (there's no limit on how many allies you can have). If your shot enters it, the shot is <b>caught</b> and steered by <i>the equation you type in that ally's field box</i>:
+          inside the field <code>x</code> = distance travelled in it, <code>y</code> = heading angle in radians (0 = right, + = up), and the value you give is the <b>turn rate</b> (+ turns left/up, − right/down).
+          <code>0.7</code> = steady left curl, <code>sin(x*3)</code> = wiggle, <code>2*(1.57−y)</code> = swing toward straight up. After the shot leaves a field it flies <b>straight</b> along its exit heading,
+          so it can be caught by another field — chain fields to bounce one shot through many enemies. Each field catches a shot once. Empty equation = no steering.</td></tr>
+    </table>
+    A caught shot is no longer a function of x: it can go backwards or down. A shot redirected by any field <u>can</u> hit you.
+
     <h3>What ends a shot</h3>
     <ul>
-      <li>The curve leaves the field (top, bottom or right edge).</li>
+      <li>The curve leaves the map.</li>
       <li>It touches an obstacle (the obstacle gets a crater).</li>
       <li>The function becomes undefined — e.g. <code>ln(−1)</code>, <code>1/0</code> or <code>sqrt</code> of a negative.</li>
     </ul>
-    Soldiers do <u>not</u> stop a shot — it carries on and can kill several in one go (allies included).
+    Soldiers do <u>not</u> stop a shot — it carries on and can kill several in one go (allies included). If a field sends your shot back into <b>you</b>, you lose that round.
 
     <h3>Function types</h3>
     <table>
@@ -368,27 +403,51 @@ function clearOfTerrain(T,x,y,margin){
   return T.circles.every(([cx,cy,r])=>Math.hypot(x-cx,y-cy)>r+margin);
 }
 
-/* ---------- map generation ("normal play": random soldiers + random dots) ---------- */
-function genMatch(seed, s){
-  const r=rng(seed), R=(a,b)=>a+r()*(b-a);
+/* ---------- obstacle ("black dots") generation — isolated so the algorithm is easy to swap later ---------- */
+function genTerrain(r, R, s){
   const circles=[];
   for(let i=0;i<s.obstacles;i++){                       // each obstacle is a small cluster of circles
     const cx=R(-12,18), cy=R(-11,11), k=3+Math.floor(r()*3);
     for(let j=0;j<k;j++) circles.push([cx+R(-1.4,1.4), cy+R(-1.4,1.4), R(0.8,1.7)]);
   }
-  const terrain={circles,craters:[]}, soldiers=[];
-  const place=(team,x0,x1)=>{
-    for(let n=0;n<500;n++){
+  return {circles,craters:[]};
+}
+
+/* ---------- zones ----------
+   perimeter : red circle around a shielded enemy  -> shot is replaced by its derivative on contact
+   parry     : purple circle in front of a parry bot -> shot is bent back toward the player
+   assist    : green circle around an ally          -> shot is steered by the player's field equation
+   A zone only works while its owner soldier is alive. */
+const ZR={perimeter:2.8, parry:2.3, assist:2.3, PARRY_OFFSET:3.2};
+
+/* ---------- map generation ---------- */
+function genMatch(seed, s){
+  const r=rng(seed), R=(a,b)=>a+r()*(b-a);
+  const terrain=genTerrain(r,R,s);
+  const soldiers=[], zones=[];
+  const place=(team,kind,x0,x1)=>{
+    for(let n=0;n<600;n++){
       const x=+R(x0,x1).toFixed(1), y=+R(-12.5,12.5).toFixed(1);
+      let z=null;
+      if(kind==="shield") z={kind:"perimeter",x,y,r:ZR.perimeter};
+      if(kind==="bot")    z={kind:"parry",x:+(x-ZR.PARRY_OFFSET).toFixed(1),y,r:ZR.parry};
+      if(kind==="ally")   z={kind:"assist",x,y,r:ZR.assist};
       if(!clearOfTerrain(terrain,x,y,1.5)) continue;
-      if(soldiers.some(o=>Math.hypot(o.x-x,o.y-y)<3.5)) continue;
-      soldiers.push({x,y,team,alive:true}); return;
+      if(soldiers.some(o=>Math.hypot(o.x-x,o.y-y)<4.2)) continue;
+      if(zones.some(q=>Math.hypot(q.x-x,q.y-y)<q.r+0.8)) continue;                 // not inside another soldier's zone
+      if(z&&soldiers.some(o=>Math.hypot(o.x-z.x,o.y-z.y)<z.r+0.8)) continue;       // my zone must not swallow anyone
+      if(z&&(z.x<CFG.XMIN+1||z.x>CFG.XMAX-1)) continue;
+      soldiers.push({x,y,team,kind,alive:true});
+      if(z){ z.owner=soldiers.length-1; zones.push(z); }
+      return;
     }
   };
-  place("player",-23,-17);                              // soldiers[0] is always the player
-  for(let i=0;i<s.allies;i++) place("ally",-23,-9);
-  for(let i=0;i<s.enemies;i++) place("enemy",-6,23);
-  return {seed,mode:s.mode,terrain,soldiers,shots:0,friendly:0,over:false};
+  place("player","player",-23,-17);                     // soldiers[0] is always the player
+  for(let i=0;i<s.bots;i++)    place("enemy","bot",-1,22);
+  for(let i=0;i<s.shields;i++) place("enemy","shield",-4,22);
+  for(let i=0;i<s.allies;i++)  place("ally","ally",-22,18);
+  for(let i=0;i<s.enemies;i++) place("enemy","normal",-6,23);
+  return {seed,mode:s.mode,terrain,soldiers,zones,shots:0,friendly:0,over:false};
 }
 
 /* ---------- shot simulation ---------- */
@@ -397,11 +456,28 @@ function distPointSeg(px,py,ax,ay,bx,by){
   let t = l2? ((px-ax)*dx+(py-ay)*dy)/l2 : 0; t=Math.max(0,Math.min(1,t));
   return Math.hypot(px-(ax+t*dx), py-(ay+t*dy));
 }
+const zoneLive=(M,z)=>M.soldiers[z.owner].alive;
 
-// f takes (x,y,dy). Returns {pts, killed:[soldier indices], impact:[x,y]|null, closest, offset}
-function simulate(f, M, o={}){
-  const P=M.soldiers[0], mode=M.mode, h=CFG.STEP;
-  const pts=[[P.x,P.y]], killed=new Set(); let impact=null, closest=Infinity, offset=0;
+/* f      : compiled main equation, takes (x,y,dy)
+   o.angle: starting angle (deg) for y'' mode
+   o.fields: {zoneIndex: compiled fn(s, heading)} for assist fields
+   Phases:  func  -> the plotted curve (shields can swap it for its derivative)
+            field -> caught by a parry/assist field, steered by that field's rule
+            free  -> straight line along the exit heading (can be caught by further fields = chaining) */
+function simulate(f0, M, o={}){
+  const P=M.soldiers[0], mode=M.mode, h=CFG.STEP, MAXL=3;
+  const ox=o.relative?P.x:0, f=(x,y,d)=>f0(x-ox,y,d);        // relative: x in your equation = distance from the player
+  const pts=[[P.x,P.y]], killed=new Set(), events=[], used=new Set(), trig=new Set();
+  let exit=null;
+  const leave=(ax,ay,bx,by)=>{                                // draw the shot up to the map edge and remember why it ended
+    if(!isFinite(by)){ exit={why:"undefined",x:ax}; return; }
+    let t=1;
+    if(by>CFG.YMAX) t=(CFG.YMAX-ay)/(by-ay); else if(by<CFG.YMIN) t=(CFG.YMIN-ay)/(by-ay);
+    if(bx>CFG.XMAX) t=Math.min(t,(CFG.XMAX-ax)/(bx-ax)); else if(bx<CFG.XMIN) t=Math.min(t,(CFG.XMIN-ax)/(bx-ax));
+    t=Math.max(0,Math.min(1,t)); const ex=ax+t*(bx-ax), ey=ay+t*(by-ay);
+    pts.push([ex,ey]); exit={why:by>CFG.YMAX?"top":by<CFG.YMIN?"bottom":"edge",x:ex};
+  };
+  let impact=null, closest=Infinity, offset=0, selfHit=false;
   let x=P.x, y=P.y, v=0;
   if(mode==="normal"){
     const f0=f(P.x,0,0);
@@ -413,48 +489,122 @@ function simulate(f, M, o={}){
     v=Math.tan((o.angle||0)*Math.PI/180);
     if(!isFinite(f(x,y,v))) throw new Error("y'' is undefined at the player's position");
   }
-  for(let n=0;n<4000;n++){
-    const nx=x+h; let ny;
-    if(mode==="normal"){ ny=f(nx,0,0)+offset; }
-    else if(mode==="ode1"){
-      const k1=f(x,y,0), k2=f(x+h/2,y+h/2*k1,0), k3=f(x+h/2,y+h/2*k2,0), k4=f(x+h,y+h*k3,0);
-      ny=y+h/6*(k1+2*k2+2*k3+k4);
-    } else {
-      const a1=v,               b1=f(x,y,v);
-      const a2=v+h/2*b1,        b2=f(x+h/2,y+h/2*a1,v+h/2*b1);
-      const a3=v+h/2*b2,        b3=f(x+h/2,y+h/2*a2,v+h/2*b2);
-      const a4=v+h*b3,          b4=f(x+h,y+h*a3,v+h*b3);
-      ny=y+h/6*(a1+2*a2+2*a3+a4); v=v+h/6*(b1+2*b2+2*b3+b4);
-    }
-    if(!isFinite(ny)||nx>CFG.XMAX||ny>CFG.YMAX||ny<CFG.YMIN) break;       // undefined or left the field
-    M.soldiers.forEach((s,i)=>{
-      if(i===0||!s.alive) return;
-      const d=distPointSeg(s.x,s.y,x,y,nx,ny);
-      if(s.team==="enemy"&&d<closest) closest=d;
-      if(d<=CFG.SOLDIER_R) killed.add(i);
+  // derivative bookkeeping: lv[k] = k-th numerical derivative of the base curve
+  let lv=[mode==="normal"?f(x,0,0)+offset:y], prev=lv.slice(), L=0, shift=0, by=y;
+  for(let k=1;k<=MAXL;k++){ lv[k]=NaN; prev[k]=NaN; }
+  let phase="func", zone=null, zi=-1, s=0, th=0, bounced=false;
+
+  const hitTest=(ax,ay,bx,by2)=>{
+    M.soldiers.forEach((sd,i)=>{
+      if(!sd.alive||killed.has(i)) return;
+      if(i===0&&!bounced) return;                      // your own shot can't hit you until it has been redirected
+      const d=distPointSeg(sd.x,sd.y,ax,ay,bx,by2);
+      if(sd.team==="enemy"&&d<closest) closest=d;
+      if(d<=CFG.SOLDIER_R){ killed.add(i); if(i===0) selfHit=true; }
     });
-    pts.push([nx,ny]);
-    if(solidAt(M.terrain,nx,ny)){ impact=[nx,ny]; break; }
-    x=nx; y=ny;
+  };
+  const fieldRate=(z,zIdx,sv,t,px,py)=>{
+    let k;
+    if(z.kind==="parry"){            // turn toward the player; proportional to the angle error so a head-on shot is still turned around
+      let d=Math.atan2(P.y-py,P.x-px)-t; d=Math.atan2(Math.sin(d),Math.cos(d)); k=6*d;
+    }
+    else { const g=o.fields&&o.fields[zIdx]; k=g?g(sv,t,0):0; }
+    if(!isFinite(k)) return NaN;
+    return Math.max(-20,Math.min(20,k));
+  };
+  const tryCatch=(ax,ay,bx,by2,heading)=>{            // returns true if the segment a->b just entered a catching zone
+    for(let i=0;i<M.zones.length;i++){
+      const z=M.zones[i]; if(z.kind==="perimeter"||used.has(i)||!zoneLive(M,z)) continue;
+      if(Math.hypot(ax-z.x,ay-z.y)>z.r && Math.hypot(bx-z.x,by2-z.y)<=z.r){
+        used.add(i); phase="field"; zone=z; zi=i; s=0; th=heading; bounced=true;
+        events.push({kind:z.kind,zone:i,x:bx,y:by2}); return true;
+      }
+    }
+    return false;
+  };
+
+  for(let n=0;n<7000;n++){
+    let nx, ny;
+    if(phase==="func"){
+      nx=x+h; let nb;
+      if(mode==="normal"){ nb=f(nx,0,0)+offset; }
+      else if(mode==="ode1"){
+        const k1=f(x,by,0), k2=f(x+h/2,by+h/2*k1,0), k3=f(x+h/2,by+h/2*k2,0), k4=f(x+h,by+h*k3,0);
+        nb=by+h/6*(k1+2*k2+2*k3+k4);
+      } else {
+        const a1=v,           b1=f(x,by,v);
+        const a2=v+h/2*b1,    b2=f(x+h/2,by+h/2*a1,v+h/2*b1);
+        const a3=v+h/2*b2,    b3=f(x+h/2,by+h/2*a2,v+h/2*b2);
+        const a4=v+h*b3,      b4=f(x+h,by+h*a3,v+h*b3);
+        nb=by+h/6*(a1+2*a2+2*a3+a4); v=v+h/6*(b1+2*b2+2*b3+b4);
+      }
+      prev=lv.slice(); lv[0]=nb;
+      for(let k=1;k<=MAXL;k++) lv[k]=(lv[k-1]-prev[k-1])/h;
+      by=nb; ny=lv[L]+shift;
+      if(!isFinite(ny)||nx>CFG.XMAX||ny>CFG.YMAX||ny<CFG.YMIN){ leave(x,y,nx,ny); break; }
+      hitTest(x,y,nx,ny);
+      pts.push([nx,ny]);
+      if(solidAt(M.terrain,nx,ny)){ impact=[nx,ny]; break; }
+      // derivative shield: first contact swaps the curve for its derivative (continuous at the contact point)
+      for(let i=0;i<M.zones.length;i++){
+        const z=M.zones[i]; if(z.kind!=="perimeter"||trig.has(i)||!zoneLive(M,z)||L>=MAXL) continue;
+        if(Math.hypot(x-z.x,y-z.y)>z.r && Math.hypot(nx-z.x,ny-z.y)<=z.r){
+          trig.add(i); L++; shift=ny-lv[L]; events.push({kind:"perimeter",zone:i,x:nx,y:ny});
+          if(!isFinite(shift)){ shift=NaN; }
+        }
+      }
+      const heading=Math.atan2(ny-y,nx-x);
+      if(tryCatch(x,y,nx,ny,heading)){ x=nx; y=ny; continue; }
+      x=nx; y=ny;
+    }
+    else if(phase==="field"){
+      const k1=fieldRate(zone,zi,s,th,x,y), thm=th+k1*h/2;
+      const k2=fieldRate(zone,zi,s+h/2,thm,x+Math.cos(th)*h/2,y+Math.sin(th)*h/2);
+      if(!isFinite(k1)||!isFinite(k2)) break;
+      nx=x+Math.cos(thm)*h; ny=y+Math.sin(thm)*h; th+=k2*h; s+=h;
+      if(nx<CFG.XMIN||nx>CFG.XMAX||ny>CFG.YMAX||ny<CFG.YMIN){ leave(x,y,nx,ny); break; }
+      hitTest(x,y,nx,ny); pts.push([nx,ny]);
+      if(solidAt(M.terrain,nx,ny)){ impact=[nx,ny]; break; }
+      x=nx; y=ny;
+      if(Math.hypot(x-zone.x,y-zone.y)>zone.r || s>12) phase="free";
+    }
+    else { // free flight, straight
+      nx=x+Math.cos(th)*h; ny=y+Math.sin(th)*h;
+      if(nx<CFG.XMIN||nx>CFG.XMAX||ny>CFG.YMAX||ny<CFG.YMIN){ leave(x,y,nx,ny); break; }
+      hitTest(x,y,nx,ny); pts.push([nx,ny]);
+      if(solidAt(M.terrain,nx,ny)){ impact=[nx,ny]; break; }
+      const caught=tryCatch(x,y,nx,ny,th);
+      x=nx; y=ny; if(caught) continue;
+    }
   }
-  return {pts,killed:[...killed],impact,closest,offset};
+  return {pts,killed:[...killed],impact,closest,offset,events,selfHit,exit};
 }
 
 /* ---------- tutorial levels ---------- */
-const S=(x,y,team)=>({x,y,team,alive:true});
+const S=(x,y,team,kind)=>({x,y,team,kind:kind||(team==="player"?"player":team==="ally"?"ally":"normal"),alive:true});
+const NOTERR={circles:[],craters:[]};
 const TUTORIAL=[
-  { title:"1 / 4 — Shoot straight", text:"The orange soldier is you. Type <code>0</code> and press Fire — a flat line goes straight right and hits the blue enemy.",
+  { title:"1 / 7 — Shoot straight", text:"The orange soldier is you. Type <code>0</code> and press Fire — a flat line goes straight right and hits the blue enemy.",
     hint:"0",
-    match:{mode:"normal",terrain:{circles:[],craters:[]},soldiers:[S(-20,0,"player"),S(5,0,"enemy")]} },
-  { title:"2 / 4 — Add a slope", text:"The enemy is higher up. <code>0.3*x</code> is a line that rises 3 for every 10 to the right. The game shifts it so it starts at you (see the number on the right).",
+    match:{mode:"normal",terrain:NOTERR,zones:[],soldiers:[S(-20,0,"player"),S(5,0,"enemy")]} },
+  { title:"2 / 7 — Add a slope", text:"The enemy is higher up. <code>0.3*x</code> is a line that rises 3 for every 10 to the right. The game shifts it so it starts at you (see the number on the right).",
     hint:"0.3*x",
-    match:{mode:"normal",terrain:{circles:[],craters:[]},soldiers:[S(-20,0,"player"),S(0,6,"enemy")]} },
-  { title:"3 / 4 — Get over the obstacle", text:"A dark obstacle blocks the straight path. Use an arch: <code>(x+20)*(x-8)</code> is zero at your x (−20) and at the enemy's x (8). Make it negative so it bulges up, and scale it so the peak clears the obstacle.",
+    match:{mode:"normal",terrain:NOTERR,zones:[],soldiers:[S(-20,0,"player"),S(0,6,"enemy")]} },
+  { title:"3 / 7 — Get over the obstacle", text:"A dark obstacle blocks the straight path. Use an arch: <code>(x+20)*(x-8)</code> is zero at your x (−20) and at the enemy's x (8). Make it negative so it bulges up, and scale it so the peak clears the obstacle.",
     hint:"-0.0255*(x+20)*(x-8)",
-    match:{mode:"normal",terrain:{circles:[[-5,0,2],[-5,2,1.5],[-5,-2,1.5]],craters:[]},soldiers:[S(-20,0,"player"),S(8,0,"enemy")]} },
-  { title:"4 / 4 — One shot, many kills", text:"Shots don't stop at soldiers, so line up several. Both enemies sit on the same line — and keep away from the green ally!",
+    match:{mode:"normal",terrain:{circles:[[-5,0,2],[-5,2,1.5],[-5,-2,1.5]],craters:[]},zones:[],soldiers:[S(-20,0,"player"),S(8,0,"enemy")]} },
+  { title:"4 / 7 — One shot, many kills", text:"Shots don't stop at soldiers, so line up several. Both enemies sit on the same line — and keep away from the green ally!",
     hint:"0.3*x",
-    match:{mode:"normal",terrain:{circles:[],craters:[]},soldiers:[S(-20,0,"player"),S(-5,4.5,"enemy"),S(10,9,"enemy"),S(-10,-5,"ally")]} },
+    match:{mode:"normal",terrain:NOTERR,zones:[],soldiers:[S(-20,0,"player"),S(-5,4.5,"enemy"),S(10,9,"enemy"),S(-10,-5,"ally")]} },
+  { title:"5 / 7 — The derivative shield", text:"The red circle is a <b>shield</b>. The moment your curve touches it, the curve is replaced by its <b>derivative</b> (its slope function) and carries on from the contact point. The derivative of a parabola is a straight line, so a steep parabola turns into a gentle line. Make the shot's <i>slope</i> point at the enemy rather than the curve itself.",
+    hint:"0.006*(x+20)^2",
+    match:{mode:"normal",terrain:NOTERR,zones:[{kind:"perimeter",x:10,y:5,r:2.8,owner:1}],soldiers:[S(-20,0,"player"),S(10,5,"enemy","shield")]} },
+  { title:"6 / 7 — Assist fields", text:"Your <b>ally</b> deploys a green <b>assist field</b>. If your shot enters it, the shot is caught and steered by the field's own equation (type it in the field box under the main input): the number it returns is how fast the shot turns, + = up/left. Aim a rising line into the field and make the field curl it upward to reach the enemy above.",
+    hint:"0.4*x", hintFields:["0.7"],
+    match:{mode:"normal",terrain:NOTERR,zones:[{kind:"assist",x:-8,y:3,r:2.3,owner:1}],soldiers:[S(-20,0,"player"),S(-8,3,"ally"),S(-8,10,"enemy")]} },
+  { title:"7 / 7 — The parry bot", text:"The purple circle is a <b>parry field</b> guarding the bot behind it. Anything that enters it is bent straight back at <i>you</i>. Don't go through it — arc over it and come down on the bot.",
+    hint:"-0.05*(x+20)*(x-6)",
+    match:{mode:"normal",terrain:NOTERR,zones:[{kind:"parry",x:2.8,y:0,r:2.3,owner:1}],soldiers:[S(-20,0,"player"),S(6,0,"enemy","bot")]} },
 ];
 
 /* ======================================================================
@@ -484,16 +634,20 @@ document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=
 
 /* ---------- starting matches ---------- */
 function readSettings(){
-  const n=(id,lo,hi)=>Math.max(lo,Math.min(hi,parseInt($(id).value)||lo));
-  return {mode:$("s-mode").value, enemies:n("s-en",1,8), allies:n("s-al",0,4), obstacles:n("s-ob",0,14)};
+  const n=(id,lo,hi)=>{ const v=parseInt($(id).value); return Math.max(lo,Math.min(hi,isNaN(v)?lo:v)); };
+  const st={mode:$("s-mode").value, relative:$("s-rel").value==="rel", enemies:n("s-en",0,8), shields:n("s-sh",0,4), bots:n("s-bt",0,3), allies:n("s-al",0,12), obstacles:n("s-ob",0,14)};
+  if(st.enemies+st.shields+st.bots===0) st.enemies=1;      // always at least one enemy
+  return st;
 }
+let relX=false;
 function startPlay(newSeed=true){
   if(newSeed||!startSettings){ startSettings={seed:(Math.random()*2**32)>>>0, ...readSettings()}; }
+  relX=!!startSettings.relative; $("s-rel").value=relX?"rel":"abs";
   loadMatch(genMatch(startSettings.seed,startSettings), "Play");
   $("settings").classList.remove("hidden"); $("tut").classList.add("hidden");
 }
 function startTutorial(i){
-  tutIdx=i; const L=TUTORIAL[i];
+  tutIdx=i; const L=TUTORIAL[i]; relX=false;
   loadMatch({seed:0,shots:0,friendly:0,over:false,...JSON.parse(JSON.stringify(L.match))}, "Tutorial");
   $("settings").classList.add("hidden"); $("tut").classList.remove("hidden");
   $("tut-title").textContent=L.title; $("tut-text").innerHTML=L.text;
@@ -503,15 +657,34 @@ function startTutorial(i){
 function loadMatch(m,title){
   M=m; trail=[]; $("gtitle").textContent=title;
   if(title==="Play"){ $("s-mode").value=M.mode; }
-  inp.value=""; setMode(); renderTerrain(); setStatus("",""); $("fire").disabled=false;
-  updateOffset(); updateStats(); draw(); show("game");
+  inp.value=""; buildFieldRows(); setMode(); renderTerrain(); setStatus("",""); $("fire").disabled=false;
+  activeInput=inp; updateOffset(); updateStats(); draw(); show("game");
+}
+let activeInput=null;
+function buildFieldRows(){
+  const box=$("fieldrows"); box.innerHTML="";
+  let n=0;
+  M.zones.forEach((z,zi)=>{
+    if(z.kind!=="assist") return; n++; z.label="A"+n;
+    const row=document.createElement("div"); row.className="frow"; row.dataset.zone=zi;
+    row.innerHTML='<b>'+z.label+'</b><input type="text" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="none" placeholder="turn rate, e.g. 0.7  or  sin(x)">';
+    const fi=row.querySelector("input");
+    fi.addEventListener("focus",()=>{ activeInput=fi; });
+    fi.addEventListener("keydown",e=>{ if(e.key==="Enter") fire(); });
+    box.appendChild(row);
+  });
+  $("fields").classList.toggle("hidden",n===0);
+}
+function refreshFieldRows(){          // grey out fields whose ally has been killed
+  document.querySelectorAll("#fieldrows .frow").forEach(r=>r.classList.toggle("down",!zoneLive(M,M.zones[+r.dataset.zone])));
 }
 function setMode(){
   const lab={normal:"f(x) =",ode1:"y' =",ode2:"y'' ="}[M.mode];
   $("flabel").textContent=lab;
   $("angwrap").classList.toggle("hidden",M.mode!=="ode2");
   const al=allowedFor(M.mode);
-  document.querySelectorAll("[data-needs]").forEach(b=>b.disabled=!al.has(b.dataset.needs));
+  const hasFields=M.zones.some(z=>z.kind==="assist");
+  document.querySelectorAll("[data-needs]").forEach(b=>b.disabled=!(al.has(b.dataset.needs)||(hasFields&&b.dataset.needs==="y")));
 }
 
 /* ---------- drawing ---------- */
@@ -524,6 +697,7 @@ function renderTerrain(){
   t.globalCompositeOperation="source-over";
 }
 const TEAM={player:["#e69a00","#6b4500","you"], ally:["#1f9d55","#0d4f2b","ally"], enemy:["#2a3fd0","#141f77","enemy"]};
+const KIND_LABEL={bot:"parry bot",shield:"shielded"};
 function draw(upto){
   ctx.clearRect(0,0,W,H); ctx.fillStyle="#fff"; ctx.fillRect(0,0,W,H);
   ctx.lineWidth=1; ctx.font="11px monospace"; ctx.fillStyle="#666"; ctx.textAlign="center";
@@ -540,6 +714,15 @@ function draw(upto){
   ctx.beginPath(); ctx.moveTo(X(0),0); ctx.lineTo(X(0),H); ctx.moveTo(0,Y(0)); ctx.lineTo(W,Y(0)); ctx.stroke();
   if(!M) return;
   ctx.drawImage(terrainCv,0,0);
+  M.zones.forEach(z=>{
+    if(!zoneLive(M,z)) return;
+    const px=X(z.x), py=Y(z.y), rr=z.r*U;
+    const col = z.kind==="perimeter"?["rgba(192,57,43,.10)","#c0392b"]: z.kind==="parry"?["rgba(142,68,173,.14)","#8e44ad"]:["rgba(31,157,85,.10)","#1f9d55"];
+    ctx.fillStyle=col[0]; ctx.strokeStyle=col[1]; ctx.lineWidth=2; ctx.setLineDash(z.kind==="parry"?[]:[8,6]);
+    ctx.beginPath(); ctx.arc(px,py,rr,0,7); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle=col[1]; ctx.font="bold 11px sans-serif"; ctx.textAlign="center";
+    ctx.fillText(z.kind==="perimeter"?"shield  d/dx":z.kind==="parry"?"parry field":(z.label||"assist"),px,py+rr+12);
+  });
 
   const n=upto===undefined?trail.length:upto;
   if(n>1){
@@ -558,7 +741,7 @@ function draw(upto){
     ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.lineWidth=2;
     ctx.beginPath(); ctx.arc(px,py,7,0,7); ctx.fill(); ctx.stroke();
     if(s.team==="enemy"){ ctx.beginPath(); ctx.arc(px,py,CFG.SOLDIER_R*U,0,7); ctx.strokeStyle="rgba(42,63,208,.45)"; ctx.lineWidth=1.5; ctx.stroke(); }
-    ctx.fillStyle=stroke; ctx.fillText(label,px,py-12);
+    ctx.fillStyle=stroke; ctx.fillText(KIND_LABEL[s.kind]||label,px,py-12);
   });
 }
 
@@ -568,7 +751,13 @@ function fire(){
   let res;
   try{
     const f=compile(inp.value, allowedFor(M.mode));
-    res=simulate(f,M,{angle:parseFloat($("angle").value)||0});
+    const fields={};
+    document.querySelectorAll("#fieldrows .frow").forEach(r=>{
+      const zi=+r.dataset.zone, txt=r.querySelector("input").value;
+      if(!txt.trim()) return;
+      try{ fields[zi]=compile(txt,new Set(["y"])); }catch(e){ throw new Error("Field "+M.zones[zi].label+": "+e.message); }
+    });
+    res=simulate(f,M,{angle:parseFloat($("angle").value)||0,fields,relative:relX});
   }catch(e){ setStatus("⚠ "+e.message,"err"); return; }
   M.shots++; trail=res.pts; updateStats();
   $("fire").disabled=true; setStatus("","");
@@ -588,17 +777,32 @@ function finishShot(res){
   $("fire").disabled=false; draw(); updateStats();
 
   const left=M.soldiers.filter(s=>s.team==="enemy"&&s.alive).length;
+  refreshFieldRows();
   let msg="";
-  if(en) msg+="💥 "+en+" enemy"+(en>1?"ies":"")+" down. ";
+  const P0=M.soldiers[0];
+  if(res.exit&&(res.exit.why==="top"||res.exit.why==="bottom")&&res.exit.x-P0.x<8&&res.events.length===0&&!res.killed.length){
+    msg+="📈 Your curve shot off the "+res.exit.why+" of the map after only "+Math.max(0,res.exit.x-P0.x).toFixed(1)+" units — too steep. "+
+      (relX?"":"<i>x</i> is the map's x-coordinate and you stand at x = "+P0.x+", so <code>5x^2</code> has slope "+(10*P0.x).toFixed(0)+" right at your feet. Use <code>(x+"+(-P0.x).toFixed(1)+")</code> to measure from yourself, or switch “x is measured from” to <b>the player</b>. ")+"<br>";
+  }
+  if(res.exit&&res.exit.why==="undefined"&&res.pts.length<3&&!res.killed.length) msg+="⚠ The function is undefined right after your soldier. ";
+  const ev=k=>res.events.filter(e=>e.kind===k).length;
+  if(ev("perimeter")) msg+="🛡 Shield triggered — your curve became its derivative. ";
+  if(ev("assist")) msg+="🌀 Assist field"+(ev("assist")>1?"s":"")+" steered the shot ("+ev("assist")+"). ";
+  if(ev("parry")) msg+="↩ Parry field bent your shot back! ";
+  if(en) msg+="💥 "+en+(en>1?" enemies":" enemy")+" down. ";
   if(al) msg+="😬 Friendly fire: "+al+" ally down. ";
-  if(!en&&!al) msg+="Missed"+(isFinite(res.closest)?" — closest pass "+res.closest.toFixed(2)+" units from an enemy":"")+". ";
+  if(!en&&!al&&!res.selfHit) msg+="Missed"+(isFinite(res.closest)?" — closest pass "+res.closest.toFixed(2)+" units from an enemy":"")+". ";
   if(res.impact) msg+="Hit an obstacle. ";
 
+  if(res.selfHit){
+    M.over=true; $("fire").disabled=true;
+    setStatus(msg+"<br>☠ Your own shot came back and got you! Press <b>Retry map</b>.","err"); return;
+  }
   if(left===0){
     M.over=true; $("fire").disabled=true;
     if(view==="tutorial"){ setStatus(msg+"✔ Level clear!","ok"); $("tut-next").disabled=false; }
     else setStatus(msg+"<br>🎯 All enemies eliminated in "+M.shots+" shot"+(M.shots>1?"s":"")+"! Flag: <code>"+CFG.FLAG+"</code>","ok");
-  } else setStatus(msg+left+" enemy"+(left>1?"ies":"")+" left.", (en||al)?"ok":"err");
+  } else setStatus(msg+left+(left>1?" enemies":" enemy")+" left.", (en||al)?"ok":"err");
 }
 
 /* ---------- misc UI ---------- */
@@ -611,22 +815,26 @@ function updateOffset(){
   const el=$("off");
   if(!M||M.mode!=="normal"){ el.textContent = M&&M.mode==="ode2" ? "y₀ = "+M.soldiers[0].y : M ? "y₀ = "+M.soldiers[0].y : ""; return; }
   try{
-    const f0=compile(inp.value,allowedFor("normal"))(M.soldiers[0].x,0,0);
+    const f0=compile(inp.value,allowedFor("normal"))(relX?0:M.soldiers[0].x,0,0);
     if(!isFinite(f0)) throw 0;
     const o=M.soldiers[0].y-f0; el.textContent=(o<0?"- ":"+ ")+Math.abs(o).toFixed(3);
   }catch{ el.textContent="+ ?"; }
 }
 inp.addEventListener("input",updateOffset);
+inp.addEventListener("focus",()=>{ activeInput=inp; });
 inp.addEventListener("keydown",e=>{ if(e.key==="Enter") fire(); });
 $("fire").addEventListener("click",fire);
 
 $("b-new").addEventListener("click",()=>{ if(anim) return; startPlay(true); });
 $("b-retry").addEventListener("click",()=>{ if(anim) return; startPlay(false); });
 $("s-mode").addEventListener("change",()=>{ if(!anim) startPlay(true); });
+$("s-rel").addEventListener("change",()=>{ if(!anim) startPlay(true); });
 
 $("tut-hint").addEventListener("click",()=>{
   $("tut-hinttext").innerHTML=" Try: <code>"+TUTORIAL[tutIdx].hint+"</code> ";
-  inp.value=TUTORIAL[tutIdx].hint; updateOffset();
+  inp.value=TUTORIAL[tutIdx].hint;
+  (TUTORIAL[tutIdx].hintFields||[]).forEach((t,i)=>{ const f=document.querySelectorAll("#fieldrows .frow input")[i]; if(f) f.value=t; });
+  updateOffset();
 });
 $("tut-next").addEventListener("click",()=>{
   if(tutIdx<TUTORIAL.length-1) startTutorial(tutIdx+1);
@@ -635,13 +843,14 @@ $("tut-next").addEventListener("click",()=>{
 
 document.querySelectorAll(".pad button").forEach(b=>b.addEventListener("click",()=>{
   if(b.disabled) return;
-  const k=b.dataset.k, ins=b.dataset.i, s=inp.selectionStart, e=inp.selectionEnd;
-  if(ins!==undefined){ inp.setRangeText(ins,s,e,"end"); }
-  else if(k==="clear"){ inp.value=""; }
-  else if(k==="back"){ if(s!==e) inp.setRangeText("",s,e,"end"); else if(s>0) inp.setRangeText("",s-1,s,"end"); }
-  else if(k==="left"){ const p=Math.max(0,s-1); inp.setSelectionRange(p,p); }
-  else if(k==="right"){ const p=Math.min(inp.value.length,e+1); inp.setSelectionRange(p,p); }
-  inp.focus(); updateOffset();
+  const t=(activeInput&&document.body.contains(activeInput))?activeInput:inp;
+  const k=b.dataset.k, ins=b.dataset.i, s=t.selectionStart, e=t.selectionEnd;
+  if(ins!==undefined){ t.setRangeText(ins,s,e,"end"); }
+  else if(k==="clear"){ t.value=""; }
+  else if(k==="back"){ if(s!==e) t.setRangeText("",s,e,"end"); else if(s>0) t.setRangeText("",s-1,s,"end"); }
+  else if(k==="left"){ const p=Math.max(0,s-1); t.setSelectionRange(p,p); }
+  else if(k==="right"){ const p=Math.min(t.value.length,e+1); t.setSelectionRange(p,p); }
+  t.focus(); updateOffset();
 }));
 
 show("home");
