@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GraphShot</title>
+<style>
+  :root{
+    --bg:#0f2a1f; --panel:#14392a; --key:#1d5a40; --key-hi:#2a7d59; --ink:#e9fff3;
+    --accent:#ffb020; --bad:#ff6b6b; --good:#5dffa0;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Comic Sans MS","Trebuchet MS",system-ui,sans-serif;
+       display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:12px 12px 24px}
+  h1{margin:4px 0 2px;font-size:22px;letter-spacing:.5px}
+  .sub{opacity:.75;font-size:13px;margin-bottom:10px;text-align:center}
+  #stage{width:100%;max-width:980px}
+  canvas{width:100%;aspect-ratio:5/3;background:#fff;border:3px solid var(--key);border-radius:6px;display:block}
+  .bar{display:flex;gap:8px;align-items:center;margin:10px 0}
+  .fx{flex:1;display:flex;align-items:center;background:#fff;border-radius:6px;border:3px solid var(--key);overflow:hidden}
+  .fx label{background:var(--panel);padding:10px 10px;font-size:14px;white-space:nowrap}
+  .fx input{flex:1;min-width:0;border:0;outline:0;padding:10px;font-size:20px;font-family:"Consolas",monospace;color:#111}
+  .fx .off{padding:0 10px;color:#333;font-family:"Consolas",monospace;font-size:16px;white-space:nowrap}
+  button{font-family:inherit;color:var(--ink);cursor:pointer}
+  #fire{background:#c0392b;border:2px solid #ff8f84;border-radius:6px;font-size:22px;padding:8px 26px}
+  #fire:hover{background:#e04535} #fire:disabled{opacity:.5;cursor:default}
+  .pads{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+  .pad{display:grid;gap:5px;background:var(--panel);padding:8px;border-radius:8px}
+  .pad.num{grid-template-columns:repeat(3,56px)}
+  .pad.fn{grid-template-columns:repeat(3,56px)}
+  .pad button{background:var(--key);border:2px solid #0b2a1d;border-radius:6px;height:42px;font-size:18px}
+  .pad button:hover{background:var(--key-hi)}
+  .pad button.dim{opacity:.45}
+  .status{min-height:44px;text-align:center;font-size:17px;margin-top:10px}
+  .status.ok{color:var(--good)} .status.err{color:var(--bad)}
+  .status code{background:#0008;padding:2px 8px;border-radius:4px;color:#fff;user-select:all}
+  .tools{display:flex;gap:10px;justify-content:center;margin-top:6px;font-size:14px;align-items:center;flex-wrap:wrap}
+  .tools button{background:var(--panel);border:1px solid var(--key);border-radius:6px;padding:6px 12px}
+  details{max-width:760px;margin-top:14px;font-size:14px;opacity:.9}
+  summary{cursor:pointer}
+</style>
+</head>
+<body>
+<h1>GraphShot</h1>
+<div class="sub">Write f(x) so its curve passes through the target. The curve is shifted vertically so it starts at your soldier.</div>
+
+<div id="stage">
+  <canvas id="cv" width="1000" height="600"></canvas>
+
+  <div class="bar">
+    <div class="fx">
+      <label>f(x) =</label>
+      <input id="expr" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="none" placeholder="e.g. 0.3*x  or  sin(x)*5">
+      <span class="off" id="off">+ 0.000</span>
+    </div>
+    <button id="fire">Fire!</button>
+  </div>
+
+  <div class="pads">
+    <div class="pad num">
+      <button data-k="clear">C</button><button data-i="pi">π</button><button data-i="e">e</button>
+      <button data-i="1">1</button><button data-i="2">2</button><button data-i="3">3</button>
+      <button data-i="4">4</button><button data-i="5">5</button><button data-i="6">6</button>
+      <button data-i="7">7</button><button data-i="8">8</button><button data-i="9">9</button>
+      <button data-i="(">(</button><button data-i="0">0</button><button data-i=".">.</button>
+      <button data-k="left">←</button><button data-k="right">→</button><button data-k="back">⌫</button>
+    </div>
+    <div class="pad fn">
+      <button data-i="abs(">abs</button><button data-i="ln(">ln</button><button data-i="sqrt(">√</button>
+      <button data-i="sin(">sin</button><button data-i="cos(">cos</button><button data-i="tan(">tan</button>
+      <button data-i="*">*</button><button data-i="/">/</button><button data-i="exp(">exp</button>
+      <button data-i="+">+</button><button data-i="-">-</button><button data-i="^">^</button>
+      <button data-i="x">x</button><button class="dim" disabled>y</button><button data-i=")">)</button>
+    </div>
+  </div>
+
+  <div class="status" id="status"></div>
+  <div class="tools">
+    <span id="stats"></span>
+    <button id="again">New target</button>
+  </div>
+
+  <details>
+    <summary>Syntax help</summary>
+    <p>Operators: <code>+ - * / ^</code> (also <code>**</code>). Functions: <code>abs ln log sqrt sin cos tan exp</code>.
+    Constants: <code>pi e</code>. Variable: <code>x</code>. Trig uses radians. Implicit multiplication works (<code>2x</code>, <code>3(x+1)</code>).
+    The plane runs from x = -25..25 and y = -15..15. The shot travels to the right and stops when it leaves the field or hits the target.</p>
+  </details>
+</div>
+
+<script>
+/* ======================= CONFIG ======================= */
+const CFG = {
+  XMIN:-25, XMAX:25, YMIN:-15, YMAX:15,
+  HIT_RADIUS: 0.6,          // how close the curve must pass to the target centre
+  STEP: 0.02,               // sampling step in x (fine enough not to skip the target)
+  FLAG: "CTF{replace_me}",  // NOTE: client-side only, see README notes
+};
+
+/* ======================= EXPRESSION PARSER (no eval) ======================= */
+const FUNCS = {abs:Math.abs, ln:Math.log, log:Math.log10, sqrt:Math.sqrt,
+               sin:Math.sin, cos:Math.cos, tan:Math.tan, exp:Math.exp};
+const CONSTS = {pi:Math.PI, e:Math.E};
+
+function tokenize(src){
+  src = src.toLowerCase().replace(/π/g,"pi").replace(/√/g,"sqrt").replace(/\*\*/g,"^").replace(/×/g,"*").replace(/÷/g,"/").replace(/\s+/g,"");
+  const out=[]; let i=0;
+  while(i<src.length){
+    const c=src[i];
+    if(/[0-9.]/.test(c)){
+      const m=/^(\d+\.?\d*|\.\d+)/.exec(src.slice(i));
+      if(!m) throw new Error("Bad number near '"+src.slice(i,i+4)+"'");
+      out.push({t:"num",v:parseFloat(m[0])}); i+=m[0].length;
+    } else if(/[a-z]/.test(c)){
+      const m=/^[a-z]+/.exec(src.slice(i))[0];
+      if(m==="x"||(m in CONSTS)) { out.push({t:"id",v:m}); i+=m.length; }
+      else if(m in FUNCS){ out.push({t:"fn",v:m}); i+=m.length; }
+      else if(/^x/.test(m)){ out.push({t:"id",v:"x"}); i+=1; }            // "xsin" -> x sin
+      else { // allow glued names like "2pix": peel known names
+        const known=[...Object.keys(FUNCS),...Object.keys(CONSTS),"x"].find(k=>m.startsWith(k));
+        if(!known) throw new Error("Unknown name '"+m+"'");
+        out.push({t:(known in FUNCS)?"fn":"id",v:known}); i+=known.length;
+      }
+    } else if("+-*/^()".includes(c)){ out.push({t:c}); i++; }
+    else throw new Error("Unexpected character '"+c+"'");
+  }
+  return out;
+}
+
+function compile(src){
+  if(!src.trim()) throw new Error("Type a function first");
+  const T=tokenize(src); let p=0;
+  const peek=()=>T[p], next=()=>T[p++];
+  const startsValue=t=>t&&(t.t==="num"||t.t==="id"||t.t==="fn"||t.t==="(");
+
+  function expr(){
+    let l=term();
+    while(peek()&&(peek().t==="+"||peek().t==="-")){
+      const op=next().t, r=term(), a=l;
+      l = op==="+" ? x=>a(x)+r(x) : x=>a(x)-r(x);
+    }
+    return l;
+  }
+  function term(){
+    let l=unary();
+    for(;;){
+      const t=peek();
+      if(t&&(t.t==="*"||t.t==="/")){
+        next(); const r=unary(), a=l;
+        l = t.t==="*" ? x=>a(x)*r(x) : x=>a(x)/r(x);
+      } else if(startsValue(t)){            // implicit multiplication
+        const r=unary(), a=l; l=x=>a(x)*r(x);
+      } else break;
+    }
+    return l;
+  }
+  function unary(){
+    const t=peek();
+    if(t&&t.t==="-"){ next(); const a=unary(); return x=>-a(x); }
+    if(t&&t.t==="+"){ next(); return unary(); }
+    return power();
+  }
+  function power(){
+    const base=atom();
+    if(peek()&&peek().t==="^"){ next(); const e=unary(); return x=>Math.pow(base(x),e(x)); }
+    return base;
+  }
+  function atom(){
+    const t=next();
+    if(!t) throw new Error("Expression ends too early");
+    if(t.t==="num"){ const v=t.v; return ()=>v; }
+    if(t.t==="id"){ if(t.v==="x") return x=>x; const v=CONSTS[t.v]; return ()=>v; }
+    if(t.t==="fn"){
+      if(!peek()||peek().t!=="(") throw new Error("Use parentheses: "+t.v+"(...)");
+      next(); const a=expr();
+      if(!peek()||next().t!==")") throw new Error("Missing ')'");
+      const f=FUNCS[t.v]; return x=>f(a(x));
+    }
+    if(t.t==="("){
+      const a=expr();
+      if(!peek()||next().t!==")") throw new Error("Missing ')'");
+      return a;
+    }
+    throw new Error("Unexpected '"+t.t+"'");
+  }
+  const f=expr();
+  if(p<T.length) throw new Error("Unexpected '"+T[p].t+"'");
+  return f;
+}
+
+/* ======================= GAME STATE ======================= */
+const rnd=(a,b)=>a+Math.random()*(b-a);
+let G=null, trail=[], anim=null, attempts=0, solved=false;
+
+function newGame(){
+  // Player spawns on the left, target anywhere on the right part of the plane.
+  G={ px: +rnd(-23,-14).toFixed(1), py: +rnd(-12,12).toFixed(1),
+      tx: +rnd(-8,23).toFixed(1),   ty: +rnd(-13,13).toFixed(1) };
+  trail=[]; attempts=0; solved=false; anim=null;
+  setStatus("","");
+  document.getElementById("fire").disabled=false;
+  updateOffset(); updateStats(); draw();
+}
+
+/* ======================= DRAWING ======================= */
+const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
+const W=cv.width,H=cv.height;
+const X=x=>(x-CFG.XMIN)/(CFG.XMAX-CFG.XMIN)*W;
+const Y=y=>(CFG.YMAX-y)/(CFG.YMAX-CFG.YMIN)*H;
+
+function draw(upto){
+  ctx.clearRect(0,0,W,H); ctx.fillStyle="#fff"; ctx.fillRect(0,0,W,H);
+  // grid
+  ctx.lineWidth=1; ctx.font="11px monospace"; ctx.fillStyle="#666"; ctx.textAlign="center";
+  for(let x=CFG.XMIN;x<=CFG.XMAX;x++){
+    ctx.strokeStyle = x%5===0?"#ccd":"#e8e8ee"; ctx.beginPath(); ctx.moveTo(X(x),0); ctx.lineTo(X(x),H); ctx.stroke();
+    if(x%5===0&&x!==0) ctx.fillText(x,X(x),Y(0)+13);
+  }
+  ctx.textAlign="right";
+  for(let y=CFG.YMIN;y<=CFG.YMAX;y++){
+    ctx.strokeStyle = y%5===0?"#ccd":"#e8e8ee"; ctx.beginPath(); ctx.moveTo(0,Y(y)); ctx.lineTo(W,Y(y)); ctx.stroke();
+    if(y%5===0&&y!==0) ctx.fillText(y,X(0)-4,Y(y)+4);
+  }
+  ctx.strokeStyle="#555"; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(X(0),0); ctx.lineTo(X(0),H); ctx.moveTo(0,Y(0)); ctx.lineTo(W,Y(0)); ctx.stroke();
+
+  // trail
+  const n = upto===undefined ? trail.length : upto;
+  if(n>1){
+    ctx.strokeStyle="#d4322a"; ctx.lineWidth=3; ctx.lineJoin="round"; ctx.beginPath();
+    ctx.moveTo(X(trail[0][0]),Y(trail[0][1]));
+    for(let i=1;i<n;i++) ctx.lineTo(X(trail[i][0]),Y(trail[i][1]));
+    ctx.stroke();
+  }
+  if(!G) return;
+  // target
+  const r=CFG.HIT_RADIUS/(CFG.XMAX-CFG.XMIN)*W;
+  ctx.fillStyle="rgba(40,60,200,.15)"; ctx.strokeStyle="#2a3fd0"; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(X(G.tx),Y(G.ty),r,0,7); ctx.fill(); ctx.stroke();
+  ctx.fillStyle="#2a3fd0"; ctx.beginPath(); ctx.arc(X(G.tx),Y(G.ty),3,0,7); ctx.fill();
+  // player
+  ctx.fillStyle="#e69a00"; ctx.beginPath(); ctx.arc(X(G.px),Y(G.py),7,0,7); ctx.fill();
+  ctx.strokeStyle="#6b4500"; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle="#b36b00"; ctx.font="bold 12px sans-serif"; ctx.textAlign="center";
+  ctx.fillText("player",X(G.px),Y(G.py)-12);
+  ctx.fillStyle="#2a3fd0"; ctx.fillText("target",X(G.tx),Y(G.ty)-r-5);
+}
+
+/* ======================= FIRING ======================= */
+function distPointSeg(px,py,ax,ay,bx,by){
+  const dx=bx-ax, dy=by-ay, l2=dx*dx+dy*dy;
+  let t = l2? ((px-ax)*dx+(py-ay)*dy)/l2 : 0; t=Math.max(0,Math.min(1,t));
+  return Math.hypot(px-(ax+t*dx), py-(ay+t*dy));
+}
+
+// Pure function: given a compiled f, returns {pts, hit, closest, offset}
+function simulate(f, g){
+  const f0=f(g.px);
+  if(!isFinite(f0)) throw new Error("f(x) is undefined at the player's x ("+g.px+")");
+  const offset=g.py-f0;
+  const pts=[[g.px,g.py]]; let hit=false, closest=Infinity;
+  for(let x=g.px+CFG.STEP; x<=CFG.XMAX+1e-9; x+=CFG.STEP){
+    const y=f(x)+offset;
+    if(!isFinite(y)) break;                      // undefined -> shot ends
+    if(y>CFG.YMAX+5||y<CFG.YMIN-5) break;        // far off-field
+    const [ax,ay]=pts[pts.length-1];
+    pts.push([x,y]);
+    const d=distPointSeg(g.tx,g.ty,ax,ay,x,y);
+    if(d<closest) closest=d;
+    if(d<=CFG.HIT_RADIUS){ hit=true; break; }
+  }
+  return {pts,hit,closest,offset};
+}
+
+const $=id=>document.getElementById(id);
+const inp=$("expr");
+
+function fire(){
+  if(anim||solved) return;
+  let res;
+  try{ res=simulate(compile(inp.value), G); }
+  catch(e){ setStatus("⚠ "+e.message,"err"); return; }
+  attempts++; trail=res.pts; updateStats();
+  $("fire").disabled=true; setStatus("","");
+  const t0=performance.now(), dur=Math.min(2200,600+trail.length*1.2);
+  anim=requestAnimationFrame(function step(now){
+    const k=Math.min(1,(now-t0)/dur), n=Math.max(2,Math.floor(k*trail.length));
+    draw(n);
+    if(k<1){ anim=requestAnimationFrame(step); return; }
+    anim=null; $("fire").disabled=false; draw();
+    if(res.hit){
+      solved=true; $("fire").disabled=true;
+      setStatus("🎯 Direct hit in "+attempts+" shot"+(attempts>1?"s":"")+"!  Flag: <code>"+CFG.FLAG+"</code>","ok");
+    } else {
+      setStatus("Missed — closest pass was "+res.closest.toFixed(2)+" units from the target.","err");
+    }
+  });
+}
+
+/* ======================= UI WIRING ======================= */
+function setStatus(html,cls){ const s=$("status"); s.innerHTML=html; s.className="status "+(cls||""); }
+function updateStats(){ $("stats").textContent="Player ("+G.px+", "+G.py+")  ·  Shots: "+attempts; }
+function updateOffset(){
+  try{
+    const f0=compile(inp.value)(G.px);
+    if(!isFinite(f0)) throw 0;
+    const o=G.py-f0; $("off").textContent=(o<0?"- ":"+ ")+Math.abs(o).toFixed(3);
+  }catch{ $("off").textContent="+ ?"; }
+}
+inp.addEventListener("input",updateOffset);
+inp.addEventListener("keydown",e=>{ if(e.key==="Enter") fire(); });
+$("fire").addEventListener("click",fire);
+$("again").addEventListener("click",newGame);
+
+document.querySelectorAll(".pad button").forEach(b=>b.addEventListener("click",()=>{
+  if(b.disabled) return;
+  const k=b.dataset.k, ins=b.dataset.i;
+  const s=inp.selectionStart, e=inp.selectionEnd;
+  if(ins!==undefined){ inp.setRangeText(ins,s,e,"end"); }
+  else if(k==="clear"){ inp.value=""; }
+  else if(k==="back"){ if(s!==e) inp.setRangeText("",s,e,"end"); else if(s>0) inp.setRangeText("",s-1,s,"end"); }
+  else if(k==="left"){ inp.setSelectionRange(Math.max(0,s-1),Math.max(0,s-1)); }
+  else if(k==="right"){ inp.setSelectionRange(Math.min(inp.value.length,e+1),Math.min(inp.value.length,e+1)); }
+  inp.focus(); updateOffset();
+}));
+
+newGame();
+</script>
+</body>
+</html>
