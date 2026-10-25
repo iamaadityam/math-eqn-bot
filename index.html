@@ -11,53 +11,141 @@
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:"Comic Sans MS","Trebuchet MS",system-ui,sans-serif;
-       display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:12px 12px 24px}
+       min-height:100vh;padding:12px 12px 28px}
+  .screen{width:100%;max-width:980px;margin:0 auto}
+  .hidden{display:none!important}
   h1{margin:4px 0 2px;font-size:22px;letter-spacing:.5px}
-  .sub{opacity:.75;font-size:13px;margin-bottom:10px;text-align:center}
-  #stage{width:100%;max-width:980px}
+  h2{margin:8px 0}
+  h3{margin:20px 0 6px;color:var(--accent)}
+  button{font-family:inherit;color:var(--ink);cursor:pointer}
+  code{background:#0007;padding:1px 6px;border-radius:4px;font-family:Consolas,monospace;color:#fff}
+
+  /* home */
+  #home{text-align:center;padding-top:6vh}
+  #home .logo{font-size:56px;margin:0;letter-spacing:2px}
+  #home .logo span{color:var(--accent)}
+  #home .tag{opacity:.75;margin:6px 0 30px}
+  .menu{display:flex;flex-direction:column;gap:12px;max-width:320px;margin:0 auto}
+  .menu button{background:var(--key);border:2px solid #0b2a1d;border-radius:10px;font-size:22px;padding:14px}
+  .menu button:hover{background:var(--key-hi)}
+  .menu button.primary{background:#c0392b;border-color:#ff8f84}
+  .menu button.primary:hover{background:#e04535}
+
+  .topbar{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+  .topbar .back{background:var(--panel);border:1px solid var(--key);border-radius:6px;padding:6px 12px}
+  .topbar .grow{flex:1}
+
+  /* settings */
+  .settings{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;background:var(--panel);padding:8px 10px;border-radius:8px;margin-bottom:8px;font-size:13px}
+  .settings label{display:flex;flex-direction:column;gap:2px}
+  .settings select,.settings input{background:#0b2a1d;color:var(--ink);border:1px solid var(--key);border-radius:4px;padding:5px;font-family:inherit;width:100%}
+  .settings input{width:64px}
+  .settings button{background:var(--key);border:1px solid #0b2a1d;border-radius:6px;padding:7px 12px}
+  .settings button:hover{background:var(--key-hi)}
+
+  /* tutorial banner */
+  #tut{background:#0b2a1d;border:2px dashed var(--accent);border-radius:8px;padding:10px 12px;margin-bottom:8px}
+  #tut .row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center}
+  #tut button{background:var(--key);border:1px solid #0b2a1d;border-radius:6px;padding:6px 12px}
+  #tut button:disabled{opacity:.4;cursor:default}
+
   canvas{width:100%;aspect-ratio:5/3;background:#fff;border:3px solid var(--key);border-radius:6px;display:block}
   .bar{display:flex;gap:8px;align-items:center;margin:10px 0}
   .fx{flex:1;display:flex;align-items:center;background:#fff;border-radius:6px;border:3px solid var(--key);overflow:hidden}
-  .fx label{background:var(--panel);padding:10px 10px;font-size:14px;white-space:nowrap}
-  .fx input{flex:1;min-width:0;border:0;outline:0;padding:10px;font-size:20px;font-family:"Consolas",monospace;color:#111}
-  .fx .off{padding:0 10px;color:#333;font-family:"Consolas",monospace;font-size:16px;white-space:nowrap}
-  button{font-family:inherit;color:var(--ink);cursor:pointer}
+  .fx label{background:var(--panel);padding:10px;font-size:14px;white-space:nowrap}
+  .fx input{flex:1;min-width:0;border:0;outline:0;padding:10px;font-size:20px;font-family:Consolas,monospace;color:#111}
+  .fx .off{padding:0 10px;color:#333;font-family:Consolas,monospace;font-size:16px;white-space:nowrap}
+  .angle{display:flex;align-items:center;gap:4px;background:var(--panel);padding:0 8px;height:100%;font-size:13px;white-space:nowrap}
+  .angle input{width:58px;border:1px solid var(--key);background:#0b2a1d;color:var(--ink);padding:4px;border-radius:4px}
   #fire{background:#c0392b;border:2px solid #ff8f84;border-radius:6px;font-size:22px;padding:8px 26px}
   #fire:hover{background:#e04535} #fire:disabled{opacity:.5;cursor:default}
   .pads{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
-  .pad{display:grid;gap:5px;background:var(--panel);padding:8px;border-radius:8px}
-  .pad.num{grid-template-columns:repeat(3,56px)}
-  .pad.fn{grid-template-columns:repeat(3,56px)}
+  .pad{display:grid;gap:5px;background:var(--panel);padding:8px;border-radius:8px;grid-template-columns:repeat(3,56px)}
   .pad button{background:var(--key);border:2px solid #0b2a1d;border-radius:6px;height:42px;font-size:18px}
   .pad button:hover{background:var(--key-hi)}
-  .pad button.dim{opacity:.45}
+  .pad button:disabled{opacity:.35;cursor:default}
   .status{min-height:44px;text-align:center;font-size:17px;margin-top:10px}
   .status.ok{color:var(--good)} .status.err{color:var(--bad)}
-  .status code{background:#0008;padding:2px 8px;border-radius:4px;color:#fff;user-select:all}
-  .tools{display:flex;gap:10px;justify-content:center;margin-top:6px;font-size:14px;align-items:center;flex-wrap:wrap}
-  .tools button{background:var(--panel);border:1px solid var(--key);border-radius:6px;padding:6px 12px}
-  details{max-width:760px;margin-top:14px;font-size:14px;opacity:.9}
-  summary{cursor:pointer}
+  .status code{user-select:all}
+  .legend{display:flex;gap:14px;justify-content:center;font-size:13px;margin-top:6px;flex-wrap:wrap;opacity:.9}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+
+  /* help / leaderboard */
+  .card{background:var(--panel);border-radius:10px;padding:14px 18px;line-height:1.55;font-size:15px}
+  .card table{border-collapse:collapse;width:100%;margin:6px 0}
+  .card td,.card th{border-bottom:1px solid #ffffff22;padding:5px 8px;text-align:left;vertical-align:top}
+  .soon{text-align:center;padding:40px 10px;opacity:.85}
 </style>
 </head>
 <body>
-<h1>GraphShot</h1>
-<div class="sub">Write f(x) so its curve passes through the target. The curve is shifted vertically so it starts at your soldier.</div>
 
-<div id="stage">
+<!-- ================= HOME ================= -->
+<div id="home" class="screen">
+  <h1 class="logo">Graph<span>Shot</span></h1>
+  <p class="tag">Shoot with maths. Write the equation, hit the target.</p>
+  <div class="menu">
+    <button class="primary" data-go="play">▶ Play</button>
+    <button data-go="board">🏆 Leaderboards</button>
+    <button data-go="tutorial">🎓 Tutorial</button>
+    <button data-go="help">❓ Help</button>
+  </div>
+</div>
+
+<!-- ================= GAME (play + tutorial) ================= -->
+<div id="game" class="screen hidden">
+  <div class="topbar">
+    <button class="back" data-go="home">← Menu</button>
+    <h1 id="gtitle" class="grow">Play</h1>
+    <span id="stats"></span>
+  </div>
+
+  <div id="settings" class="settings">
+    <label>Function type
+      <select id="s-mode">
+        <option value="normal">f(x)</option>
+        <option value="ode1">y' = f(x, y)</option>
+        <option value="ode2">y'' = f(x, y, y')</option>
+      </select>
+    </label>
+    <label>Enemies <input id="s-en" type="number" min="1" max="8" value="3"></label>
+    <label>Allies <input id="s-al" type="number" min="0" max="4" value="1"></label>
+    <label>Obstacles <input id="s-ob" type="number" min="0" max="14" value="6"></label>
+    <button id="b-new">New map</button>
+    <button id="b-retry">Retry map</button>
+  </div>
+
+  <div id="tut" class="hidden">
+    <b id="tut-title"></b>
+    <div id="tut-text"></div>
+    <div class="row">
+      <button id="tut-hint">💡 Hint</button>
+      <span id="tut-hinttext"></span>
+      <span class="grow" style="flex:1"></span>
+      <button id="tut-next" disabled>Next →</button>
+    </div>
+  </div>
+
   <canvas id="cv" width="1000" height="600"></canvas>
+
+  <div class="legend">
+    <span><i style="background:#e69a00"></i>You</span>
+    <span><i style="background:#2a3fd0"></i>Enemy</span>
+    <span><i style="background:#1f9d55"></i>Ally (don't shoot!)</span>
+    <span><i style="background:#2b2b33"></i>Obstacle</span>
+  </div>
 
   <div class="bar">
     <div class="fx">
-      <label>f(x) =</label>
+      <label id="flabel">f(x) =</label>
       <input id="expr" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="none" placeholder="e.g. 0.3*x  or  sin(x)*5">
+      <span class="angle hidden" id="angwrap">angle° <input id="angle" type="number" value="0" min="-85" max="85"></span>
       <span class="off" id="off">+ 0.000</span>
     </div>
     <button id="fire">Fire!</button>
   </div>
 
   <div class="pads">
-    <div class="pad num">
+    <div class="pad">
       <button data-k="clear">C</button><button data-i="pi">π</button><button data-i="e">e</button>
       <button data-i="1">1</button><button data-i="2">2</button><button data-i="3">3</button>
       <button data-i="4">4</button><button data-i="5">5</button><button data-i="6">6</button>
@@ -65,45 +153,116 @@
       <button data-i="(">(</button><button data-i="0">0</button><button data-i=".">.</button>
       <button data-k="left">←</button><button data-k="right">→</button><button data-k="back">⌫</button>
     </div>
-    <div class="pad fn">
+    <div class="pad">
       <button data-i="abs(">abs</button><button data-i="ln(">ln</button><button data-i="sqrt(">√</button>
       <button data-i="sin(">sin</button><button data-i="cos(">cos</button><button data-i="tan(">tan</button>
       <button data-i="*">*</button><button data-i="/">/</button><button data-i="exp(">exp</button>
       <button data-i="+">+</button><button data-i="-">-</button><button data-i="^">^</button>
-      <button data-i="x">x</button><button class="dim" disabled>y</button><button data-i=")">)</button>
+      <button data-i="x">x</button><button data-i="y" data-needs="y">y</button><button data-i="y'" data-needs="dy">y'</button>
+      <button data-i="log(">log</button><button data-i="(">(</button><button data-i=")">)</button>
     </div>
   </div>
 
   <div class="status" id="status"></div>
-  <div class="tools">
-    <span id="stats"></span>
-    <button id="again">New target</button>
-  </div>
+</div>
 
-  <details>
-    <summary>Syntax help</summary>
-    <p>Operators: <code>+ - * / ^</code> (also <code>**</code>). Functions: <code>abs ln log sqrt sin cos tan exp</code>.
-    Constants: <code>pi e</code>. Variable: <code>x</code>. Trig uses radians. Implicit multiplication works (<code>2x</code>, <code>3(x+1)</code>).
-    The plane runs from x = -25..25 and y = -15..15. The shot travels to the right and stops when it leaves the field or hits the target.</p>
-  </details>
+<!-- ================= HELP ================= -->
+<div id="help" class="screen hidden">
+  <div class="topbar"><button class="back" data-go="home">← Menu</button><h1 class="grow">Help — how the equations work</h1></div>
+  <div class="card">
+    <h3 style="margin-top:0">The goal</h3>
+    Your soldier (orange) stands somewhere on the map. Type an equation; when you press <b>Fire!</b> the graph of that equation is drawn
+    starting <i>at your soldier</i>, travelling to the right. Every enemy (blue) the curve touches is killed. Kill all enemies to win.
+
+    <h3>The map</h3>
+    A normal Cartesian plane: <code>x</code> from −25 to 25 (left → right), <code>y</code> from −15 to 15 (bottom → top). The thick lines are the axes
+    and each small square is 1 unit. Dark blobs are <b>obstacles</b>: if your curve touches one the shot ends there and blows a hole in it.
+    Green soldiers are your <b>allies</b> — your shots kill them too.
+
+    <h3>How your equation becomes a shot</h3>
+    The curve is always <b>shifted up or down so that it passes through your soldier</b>. That shift is the number shown at the right of the input (e.g. <code>+ 6.137</code>).
+    So only the <i>shape</i> of your function matters — not where it would normally cross the axes.<br><br>
+    Important: <code>x</code> is the real x‑coordinate on the map, <u>not</u> the distance from you. If you stand at x = −20, then <code>x^2</code> already
+    has a steep slope at your feet. To get shapes centred on yourself, use <code>(x+20)</code> (if you stand at −20) instead of <code>x</code>.
+
+    <h3>Syntax</h3>
+    <table>
+      <tr><th>Type</th><th>What you can write</th></tr>
+      <tr><td>Operators</td><td><code>+ − * / ^</code> and <code>( )</code>. Power also works as <code>**</code>. <code>2^3^2</code> = 2^(3^2).</td></tr>
+      <tr><td>Functions</td><td><code>abs ln log sqrt sin cos tan exp</code> — always with brackets: <code>sin(x)</code>. <code>ln</code> is natural log, <code>log</code> is base 10.</td></tr>
+      <tr><td>Constants</td><td><code>pi</code> (or π), <code>e</code></td></tr>
+      <tr><td>Variables</td><td><code>x</code> always. <code>y</code> and <code>y'</code> only in the differential‑equation modes.</td></tr>
+      <tr><td>Shortcuts</td><td>Implicit multiplication: <code>2x</code>, <code>3(x+1)</code>, <code>sin(x)cos(x)</code>. Trig works in <b>radians</b>.</td></tr>
+    </table>
+
+    <h3>Handy shapes</h3>
+    <table>
+      <tr><th>Equation</th><th>What it does</th></tr>
+      <tr><td><code>0</code></td><td>Perfectly flat shot.</td></tr>
+      <tr><td><code>0.3*x</code></td><td>Straight line with slope 0.3 (up 3 for every 10 to the right).</td></tr>
+      <tr><td><code>(ty−py)/(tx−px)*x</code></td><td>Straight line through you at (px, py) and a target at (tx, ty): just compute the slope.</td></tr>
+      <tr><td><code>-0.0255*(x+20)*(x-8)</code></td><td>An arch: zero at x = −20 and x = 8, peak between. Great for hopping over obstacles.</td></tr>
+      <tr><td><code>3*sin(x/2)</code></td><td>A wave — passes through several enemies in a row.</td></tr>
+      <tr><td><code>5*sin(x)/x</code>‑style</td><td>Shapes that decay; careful, <code>x</code> = 0 is undefined.</td></tr>
+    </table>
+    <b>Tip:</b> to make a curve hit several points, add terms that vanish at the points you already have, e.g. <code>(x−a)(x−b)</code> is 0 at both a and b.
+
+    <h3>What ends a shot</h3>
+    <ul>
+      <li>The curve leaves the field (top, bottom or right edge).</li>
+      <li>It touches an obstacle (the obstacle gets a crater).</li>
+      <li>The function becomes undefined — e.g. <code>ln(−1)</code>, <code>1/0</code> or <code>sqrt</code> of a negative.</li>
+    </ul>
+    Soldiers do <u>not</u> stop a shot — it carries on and can kill several in one go (allies included).
+
+    <h3>Function types</h3>
+    <table>
+      <tr><td><b>f(x)</b></td><td>The default. The graph of <code>y = f(x)</code>, shifted to start at you.</td></tr>
+      <tr><td><b>y' = f(x, y)</b></td><td>You give the <i>slope</i> of the path at every point; the game integrates it from your position. <code>y' = 0.1</code> is a line with slope 0.1; <code>y' = -y/10</code> bends the path back toward the x‑axis. You can use <code>x</code> and <code>y</code> (the height of the path right now).</td></tr>
+      <tr><td><b>y'' = f(x, y, y')</b></td><td>You give the <i>curvature</i>. You also set a starting <b>angle</b> (degrees, 0 = flat, positive = up). <code>y'' = -0.05</code> with angle 30° fires a parabolic arc. You can use <code>x</code>, <code>y</code> and <code>y'</code>.</td></tr>
+    </table>
+
+    <h3>Error messages</h3>
+    <table>
+      <tr><td><code>Use parentheses</code></td><td>Write <code>sin(x)</code>, not <code>sin x</code>.</td></tr>
+      <tr><td><code>Missing ')'</code></td><td>Brackets don't match.</td></tr>
+      <tr><td><code>undefined at the player's x</code></td><td>Your function breaks exactly where you stand (e.g. <code>1/(x+20)</code> while standing at −20).</td></tr>
+      <tr><td><code>can't be used in this mode</code></td><td>You used <code>y</code> or <code>y'</code> in f(x) mode.</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ================= LEADERBOARD ================= -->
+<div id="board" class="screen hidden">
+  <div class="topbar"><button class="back" data-go="home">← Menu</button><h1 class="grow">Leaderboards</h1></div>
+  <div class="card soon">
+    <div style="font-size:48px">🏆</div>
+    <h2>Coming soon</h2>
+    <p>Rankings will show up here once scores are being recorded.</p>
+  </div>
 </div>
 
 <script>
-/* ======================= CONFIG ======================= */
+/* =====================================================================
+   PURE GAME LOGIC (no DOM) — this part can be ported to a server as is
+   ===================================================================== */
 const CFG = {
   XMIN:-25, XMAX:25, YMIN:-15, YMAX:15,
-  HIT_RADIUS: 0.6,          // how close the curve must pass to the target centre
-  STEP: 0.02,               // sampling step in x (fine enough not to skip the target)
-  FLAG: "CTF{replace_me}",  // NOTE: client-side only, see README notes
+  SOLDIER_R: 0.7,      // how close the curve must pass to a soldier to kill it
+  CRATER_R: 1.1,       // hole punched in an obstacle where a shot lands
+  STEP: 0.02,          // x step for sampling / integration
+  FLAG: "CTF{replace_me}",  // client-side only — see notes
 };
 
-/* ======================= EXPRESSION PARSER (no eval) ======================= */
+/* ---------- expression parser (no eval) ---------- */
 const FUNCS = {abs:Math.abs, ln:Math.log, log:Math.log10, sqrt:Math.sqrt,
                sin:Math.sin, cos:Math.cos, tan:Math.tan, exp:Math.exp};
 const CONSTS = {pi:Math.PI, e:Math.E};
+const NAMES = [...Object.keys(FUNCS),...Object.keys(CONSTS),"x","y","dy"].sort((a,b)=>b.length-a.length);
 
 function tokenize(src){
-  src = src.toLowerCase().replace(/π/g,"pi").replace(/√/g,"sqrt").replace(/\*\*/g,"^").replace(/×/g,"*").replace(/÷/g,"/").replace(/\s+/g,"");
+  src = src.toLowerCase().replace(/y['′’]/g,"dy").replace(/π/g,"pi").replace(/√/g,"sqrt")
+           .replace(/\*\*/g,"^").replace(/×/g,"*").replace(/÷/g,"/").replace(/−/g,"-").replace(/\s+/g,"");
   const out=[]; let i=0;
   while(i<src.length){
     const c=src[i];
@@ -112,32 +271,30 @@ function tokenize(src){
       if(!m) throw new Error("Bad number near '"+src.slice(i,i+4)+"'");
       out.push({t:"num",v:parseFloat(m[0])}); i+=m[0].length;
     } else if(/[a-z]/.test(c)){
-      const m=/^[a-z]+/.exec(src.slice(i))[0];
-      if(m==="x"||(m in CONSTS)) { out.push({t:"id",v:m}); i+=m.length; }
-      else if(m in FUNCS){ out.push({t:"fn",v:m}); i+=m.length; }
-      else if(/^x/.test(m)){ out.push({t:"id",v:"x"}); i+=1; }            // "xsin" -> x sin
-      else { // allow glued names like "2pix": peel known names
-        const known=[...Object.keys(FUNCS),...Object.keys(CONSTS),"x"].find(k=>m.startsWith(k));
-        if(!known) throw new Error("Unknown name '"+m+"'");
-        out.push({t:(known in FUNCS)?"fn":"id",v:known}); i+=known.length;
-      }
+      const run=/^[a-z]+/.exec(src.slice(i))[0];
+      const known=NAMES.find(k=>run.startsWith(k));
+      if(!known) throw new Error("Unknown name '"+run+"'");
+      out.push({t:(known in FUNCS)?"fn":"id",v:known}); i+=known.length;
     } else if("+-*/^()".includes(c)){ out.push({t:c}); i++; }
     else throw new Error("Unexpected character '"+c+"'");
   }
   return out;
 }
 
-function compile(src){
+// allowed: Set of variable names permitted ("y","dy"); x is always allowed.
+// Compiled closures take (x, y, dy).
+function compile(src, allowed=new Set()){
   if(!src.trim()) throw new Error("Type a function first");
   const T=tokenize(src); let p=0;
   const peek=()=>T[p], next=()=>T[p++];
   const startsValue=t=>t&&(t.t==="num"||t.t==="id"||t.t==="fn"||t.t==="(");
+  const add=(a,b)=>(x,y,d)=>a(x,y,d)+b(x,y,d), sub=(a,b)=>(x,y,d)=>a(x,y,d)-b(x,y,d),
+        mul=(a,b)=>(x,y,d)=>a(x,y,d)*b(x,y,d), div=(a,b)=>(x,y,d)=>a(x,y,d)/b(x,y,d);
 
   function expr(){
     let l=term();
     while(peek()&&(peek().t==="+"||peek().t==="-")){
-      const op=next().t, r=term(), a=l;
-      l = op==="+" ? x=>a(x)+r(x) : x=>a(x)-r(x);
+      const op=next().t, r=term(); l = op==="+"?add(l,r):sub(l,r);
     }
     return l;
   }
@@ -145,36 +302,40 @@ function compile(src){
     let l=unary();
     for(;;){
       const t=peek();
-      if(t&&(t.t==="*"||t.t==="/")){
-        next(); const r=unary(), a=l;
-        l = t.t==="*" ? x=>a(x)*r(x) : x=>a(x)/r(x);
-      } else if(startsValue(t)){            // implicit multiplication
-        const r=unary(), a=l; l=x=>a(x)*r(x);
-      } else break;
+      if(t&&(t.t==="*"||t.t==="/")){ next(); const r=unary(); l = t.t==="*"?mul(l,r):div(l,r); }
+      else if(startsValue(t)){ l=mul(l,unary()); }            // implicit multiplication
+      else break;
     }
     return l;
   }
   function unary(){
     const t=peek();
-    if(t&&t.t==="-"){ next(); const a=unary(); return x=>-a(x); }
+    if(t&&t.t==="-"){ next(); const a=unary(); return (x,y,d)=>-a(x,y,d); }
     if(t&&t.t==="+"){ next(); return unary(); }
     return power();
   }
   function power(){
     const base=atom();
-    if(peek()&&peek().t==="^"){ next(); const e=unary(); return x=>Math.pow(base(x),e(x)); }
+    if(peek()&&peek().t==="^"){ next(); const e=unary(); return (x,y,d)=>Math.pow(base(x,y,d),e(x,y,d)); }
     return base;
   }
   function atom(){
     const t=next();
     if(!t) throw new Error("Expression ends too early");
     if(t.t==="num"){ const v=t.v; return ()=>v; }
-    if(t.t==="id"){ if(t.v==="x") return x=>x; const v=CONSTS[t.v]; return ()=>v; }
+    if(t.t==="id"){
+      if(t.v==="x") return x=>x;
+      if(t.v==="y"||t.v==="dy"){
+        if(!allowed.has(t.v)) throw new Error("'"+(t.v==="y"?"y":"y'")+"' can't be used in this mode");
+        return t.v==="y" ? (x,y)=>y : (x,y,d)=>d;
+      }
+      const v=CONSTS[t.v]; return ()=>v;
+    }
     if(t.t==="fn"){
       if(!peek()||peek().t!=="(") throw new Error("Use parentheses: "+t.v+"(...)");
       next(); const a=expr();
       if(!peek()||next().t!==")") throw new Error("Missing ')'");
-      const f=FUNCS[t.v]; return x=>f(a(x));
+      const f=FUNCS[t.v]; return (x,y,d)=>f(a(x,y,d));
     }
     if(t.t==="("){
       const a=expr();
@@ -187,144 +348,303 @@ function compile(src){
   if(p<T.length) throw new Error("Unexpected '"+T[p].t+"'");
   return f;
 }
+const allowedFor = mode => new Set(mode==="normal"?[]:mode==="ode1"?["y"]:["y","dy"]);
 
-/* ======================= GAME STATE ======================= */
-const rnd=(a,b)=>a+Math.random()*(b-a);
-let G=null, trail=[], anim=null, attempts=0, solved=false;
-
-function newGame(){
-  // Player spawns on the left, target anywhere on the right part of the plane.
-  G={ px: +rnd(-23,-14).toFixed(1), py: +rnd(-12,12).toFixed(1),
-      tx: +rnd(-8,23).toFixed(1),   ty: +rnd(-13,13).toFixed(1) };
-  trail=[]; attempts=0; solved=false; anim=null;
-  setStatus("","");
-  document.getElementById("fire").disabled=false;
-  updateOffset(); updateStats(); draw();
+/* ---------- seeded RNG so a map can be reproduced from its seed ---------- */
+function rng(seed){
+  let a=seed>>>0;
+  return ()=>{ a=(a+0x6D2B79F5)>>>0; let t=a; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296; };
 }
 
-/* ======================= DRAWING ======================= */
-const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
-const W=cv.width,H=cv.height;
-const X=x=>(x-CFG.XMIN)/(CFG.XMAX-CFG.XMIN)*W;
-const Y=y=>(CFG.YMAX-y)/(CFG.YMAX-CFG.YMIN)*H;
-
-function draw(upto){
-  ctx.clearRect(0,0,W,H); ctx.fillStyle="#fff"; ctx.fillRect(0,0,W,H);
-  // grid
-  ctx.lineWidth=1; ctx.font="11px monospace"; ctx.fillStyle="#666"; ctx.textAlign="center";
-  for(let x=CFG.XMIN;x<=CFG.XMAX;x++){
-    ctx.strokeStyle = x%5===0?"#ccd":"#e8e8ee"; ctx.beginPath(); ctx.moveTo(X(x),0); ctx.lineTo(X(x),H); ctx.stroke();
-    if(x%5===0&&x!==0) ctx.fillText(x,X(x),Y(0)+13);
-  }
-  ctx.textAlign="right";
-  for(let y=CFG.YMIN;y<=CFG.YMAX;y++){
-    ctx.strokeStyle = y%5===0?"#ccd":"#e8e8ee"; ctx.beginPath(); ctx.moveTo(0,Y(y)); ctx.lineTo(W,Y(y)); ctx.stroke();
-    if(y%5===0&&y!==0) ctx.fillText(y,X(0)-4,Y(y)+4);
-  }
-  ctx.strokeStyle="#555"; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.moveTo(X(0),0); ctx.lineTo(X(0),H); ctx.moveTo(0,Y(0)); ctx.lineTo(W,Y(0)); ctx.stroke();
-
-  // trail
-  const n = upto===undefined ? trail.length : upto;
-  if(n>1){
-    ctx.strokeStyle="#d4322a"; ctx.lineWidth=3; ctx.lineJoin="round"; ctx.beginPath();
-    ctx.moveTo(X(trail[0][0]),Y(trail[0][1]));
-    for(let i=1;i<n;i++) ctx.lineTo(X(trail[i][0]),Y(trail[i][1]));
-    ctx.stroke();
-  }
-  if(!G) return;
-  // target
-  const r=CFG.HIT_RADIUS/(CFG.XMAX-CFG.XMIN)*W;
-  ctx.fillStyle="rgba(40,60,200,.15)"; ctx.strokeStyle="#2a3fd0"; ctx.lineWidth=2;
-  ctx.beginPath(); ctx.arc(X(G.tx),Y(G.ty),r,0,7); ctx.fill(); ctx.stroke();
-  ctx.fillStyle="#2a3fd0"; ctx.beginPath(); ctx.arc(X(G.tx),Y(G.ty),3,0,7); ctx.fill();
-  // player
-  ctx.fillStyle="#e69a00"; ctx.beginPath(); ctx.arc(X(G.px),Y(G.py),7,0,7); ctx.fill();
-  ctx.strokeStyle="#6b4500"; ctx.lineWidth=2; ctx.stroke();
-  ctx.fillStyle="#b36b00"; ctx.font="bold 12px sans-serif"; ctx.textAlign="center";
-  ctx.fillText("player",X(G.px),Y(G.py)-12);
-  ctx.fillStyle="#2a3fd0"; ctx.fillText("target",X(G.tx),Y(G.ty)-r-5);
+/* ---------- terrain: union of circles minus craters ---------- */
+function solidAt(T,x,y){
+  let inside=false;
+  for(const [cx,cy,r] of T.circles){ if((x-cx)*(x-cx)+(y-cy)*(y-cy)<=r*r){ inside=true; break; } }
+  if(!inside) return false;
+  for(const [cx,cy,r] of T.craters){ if((x-cx)*(x-cx)+(y-cy)*(y-cy)<=r*r) return false; }
+  return true;
+}
+function clearOfTerrain(T,x,y,margin){
+  return T.circles.every(([cx,cy,r])=>Math.hypot(x-cx,y-cy)>r+margin);
 }
 
-/* ======================= FIRING ======================= */
+/* ---------- map generation ("normal play": random soldiers + random dots) ---------- */
+function genMatch(seed, s){
+  const r=rng(seed), R=(a,b)=>a+r()*(b-a);
+  const circles=[];
+  for(let i=0;i<s.obstacles;i++){                       // each obstacle is a small cluster of circles
+    const cx=R(-12,18), cy=R(-11,11), k=3+Math.floor(r()*3);
+    for(let j=0;j<k;j++) circles.push([cx+R(-1.4,1.4), cy+R(-1.4,1.4), R(0.8,1.7)]);
+  }
+  const terrain={circles,craters:[]}, soldiers=[];
+  const place=(team,x0,x1)=>{
+    for(let n=0;n<500;n++){
+      const x=+R(x0,x1).toFixed(1), y=+R(-12.5,12.5).toFixed(1);
+      if(!clearOfTerrain(terrain,x,y,1.5)) continue;
+      if(soldiers.some(o=>Math.hypot(o.x-x,o.y-y)<3.5)) continue;
+      soldiers.push({x,y,team,alive:true}); return;
+    }
+  };
+  place("player",-23,-17);                              // soldiers[0] is always the player
+  for(let i=0;i<s.allies;i++) place("ally",-23,-9);
+  for(let i=0;i<s.enemies;i++) place("enemy",-6,23);
+  return {seed,mode:s.mode,terrain,soldiers,shots:0,friendly:0,over:false};
+}
+
+/* ---------- shot simulation ---------- */
 function distPointSeg(px,py,ax,ay,bx,by){
   const dx=bx-ax, dy=by-ay, l2=dx*dx+dy*dy;
   let t = l2? ((px-ax)*dx+(py-ay)*dy)/l2 : 0; t=Math.max(0,Math.min(1,t));
   return Math.hypot(px-(ax+t*dx), py-(ay+t*dy));
 }
 
-// Pure function: given a compiled f, returns {pts, hit, closest, offset}
-function simulate(f, g){
-  const f0=f(g.px);
-  if(!isFinite(f0)) throw new Error("f(x) is undefined at the player's x ("+g.px+")");
-  const offset=g.py-f0;
-  const pts=[[g.px,g.py]]; let hit=false, closest=Infinity;
-  for(let x=g.px+CFG.STEP; x<=CFG.XMAX+1e-9; x+=CFG.STEP){
-    const y=f(x)+offset;
-    if(!isFinite(y)) break;                      // undefined -> shot ends
-    if(y>CFG.YMAX+5||y<CFG.YMIN-5) break;        // far off-field
-    const [ax,ay]=pts[pts.length-1];
-    pts.push([x,y]);
-    const d=distPointSeg(g.tx,g.ty,ax,ay,x,y);
-    if(d<closest) closest=d;
-    if(d<=CFG.HIT_RADIUS){ hit=true; break; }
+// f takes (x,y,dy). Returns {pts, killed:[soldier indices], impact:[x,y]|null, closest, offset}
+function simulate(f, M, o={}){
+  const P=M.soldiers[0], mode=M.mode, h=CFG.STEP;
+  const pts=[[P.x,P.y]], killed=new Set(); let impact=null, closest=Infinity, offset=0;
+  let x=P.x, y=P.y, v=0;
+  if(mode==="normal"){
+    const f0=f(P.x,0,0);
+    if(!isFinite(f0)) throw new Error("f(x) is undefined at the player's x ("+P.x+")");
+    offset=P.y-f0;
+  } else if(mode==="ode1"){
+    if(!isFinite(f(x,y,0))) throw new Error("y' is undefined at the player's position");
+  } else {
+    v=Math.tan((o.angle||0)*Math.PI/180);
+    if(!isFinite(f(x,y,v))) throw new Error("y'' is undefined at the player's position");
   }
-  return {pts,hit,closest,offset};
+  for(let n=0;n<4000;n++){
+    const nx=x+h; let ny;
+    if(mode==="normal"){ ny=f(nx,0,0)+offset; }
+    else if(mode==="ode1"){
+      const k1=f(x,y,0), k2=f(x+h/2,y+h/2*k1,0), k3=f(x+h/2,y+h/2*k2,0), k4=f(x+h,y+h*k3,0);
+      ny=y+h/6*(k1+2*k2+2*k3+k4);
+    } else {
+      const a1=v,               b1=f(x,y,v);
+      const a2=v+h/2*b1,        b2=f(x+h/2,y+h/2*a1,v+h/2*b1);
+      const a3=v+h/2*b2,        b3=f(x+h/2,y+h/2*a2,v+h/2*b2);
+      const a4=v+h*b3,          b4=f(x+h,y+h*a3,v+h*b3);
+      ny=y+h/6*(a1+2*a2+2*a3+a4); v=v+h/6*(b1+2*b2+2*b3+b4);
+    }
+    if(!isFinite(ny)||nx>CFG.XMAX||ny>CFG.YMAX||ny<CFG.YMIN) break;       // undefined or left the field
+    M.soldiers.forEach((s,i)=>{
+      if(i===0||!s.alive) return;
+      const d=distPointSeg(s.x,s.y,x,y,nx,ny);
+      if(s.team==="enemy"&&d<closest) closest=d;
+      if(d<=CFG.SOLDIER_R) killed.add(i);
+    });
+    pts.push([nx,ny]);
+    if(solidAt(M.terrain,nx,ny)){ impact=[nx,ny]; break; }
+    x=nx; y=ny;
+  }
+  return {pts,killed:[...killed],impact,closest,offset};
 }
 
-const $=id=>document.getElementById(id);
-const inp=$("expr");
+/* ---------- tutorial levels ---------- */
+const S=(x,y,team)=>({x,y,team,alive:true});
+const TUTORIAL=[
+  { title:"1 / 4 — Shoot straight", text:"The orange soldier is you. Type <code>0</code> and press Fire — a flat line goes straight right and hits the blue enemy.",
+    hint:"0",
+    match:{mode:"normal",terrain:{circles:[],craters:[]},soldiers:[S(-20,0,"player"),S(5,0,"enemy")]} },
+  { title:"2 / 4 — Add a slope", text:"The enemy is higher up. <code>0.3*x</code> is a line that rises 3 for every 10 to the right. The game shifts it so it starts at you (see the number on the right).",
+    hint:"0.3*x",
+    match:{mode:"normal",terrain:{circles:[],craters:[]},soldiers:[S(-20,0,"player"),S(0,6,"enemy")]} },
+  { title:"3 / 4 — Get over the obstacle", text:"A dark obstacle blocks the straight path. Use an arch: <code>(x+20)*(x-8)</code> is zero at your x (−20) and at the enemy's x (8). Make it negative so it bulges up, and scale it so the peak clears the obstacle.",
+    hint:"-0.0255*(x+20)*(x-8)",
+    match:{mode:"normal",terrain:{circles:[[-5,0,2],[-5,2,1.5],[-5,-2,1.5]],craters:[]},soldiers:[S(-20,0,"player"),S(8,0,"enemy")]} },
+  { title:"4 / 4 — One shot, many kills", text:"Shots don't stop at soldiers, so line up several. Both enemies sit on the same line — and keep away from the green ally!",
+    hint:"0.3*x",
+    match:{mode:"normal",terrain:{circles:[],craters:[]},soldiers:[S(-20,0,"player"),S(-5,4.5,"enemy"),S(10,9,"enemy"),S(-10,-5,"ally")]} },
+];
 
+/* ======================================================================
+   UI
+   ====================================================================== */
+const $=id=>document.getElementById(id);
+const cv=$("cv"), ctx=cv.getContext("2d"), W=cv.width, H=cv.height;
+const X=x=>(x-CFG.XMIN)/(CFG.XMAX-CFG.XMIN)*W, Y=y=>(CFG.YMAX-y)/(CFG.YMAX-CFG.YMIN)*H, U=W/(CFG.XMAX-CFG.XMIN);
+const inp=$("expr");
+const terrainCv=document.createElement("canvas"); terrainCv.width=W; terrainCv.height=H;
+
+let M=null, trail=[], anim=null, view="home", tutIdx=0, startSettings=null;
+
+/* ---------- screens ---------- */
+function show(id){
+  ["home","game","help","board"].forEach(s=>$(s).classList.toggle("hidden",s!==id));
+  window.scrollTo(0,0);
+}
+function go(where){
+  if(anim){ cancelAnimationFrame(anim); anim=null; }
+  if(where==="play") startPlay();
+  else if(where==="tutorial") startTutorial(0);
+  else show(where);
+  view=where;
+}
+document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>go(b.dataset.go)));
+
+/* ---------- starting matches ---------- */
+function readSettings(){
+  const n=(id,lo,hi)=>Math.max(lo,Math.min(hi,parseInt($(id).value)||lo));
+  return {mode:$("s-mode").value, enemies:n("s-en",1,8), allies:n("s-al",0,4), obstacles:n("s-ob",0,14)};
+}
+function startPlay(newSeed=true){
+  if(newSeed||!startSettings){ startSettings={seed:(Math.random()*2**32)>>>0, ...readSettings()}; }
+  loadMatch(genMatch(startSettings.seed,startSettings), "Play");
+  $("settings").classList.remove("hidden"); $("tut").classList.add("hidden");
+}
+function startTutorial(i){
+  tutIdx=i; const L=TUTORIAL[i];
+  loadMatch({seed:0,shots:0,friendly:0,over:false,...JSON.parse(JSON.stringify(L.match))}, "Tutorial");
+  $("settings").classList.add("hidden"); $("tut").classList.remove("hidden");
+  $("tut-title").textContent=L.title; $("tut-text").innerHTML=L.text;
+  $("tut-hinttext").innerHTML=""; $("tut-next").disabled=true;
+  $("tut-next").textContent = i===TUTORIAL.length-1 ? "Finish ✔" : "Next →";
+}
+function loadMatch(m,title){
+  M=m; trail=[]; $("gtitle").textContent=title;
+  if(title==="Play"){ $("s-mode").value=M.mode; }
+  inp.value=""; setMode(); renderTerrain(); setStatus("",""); $("fire").disabled=false;
+  updateOffset(); updateStats(); draw(); show("game");
+}
+function setMode(){
+  const lab={normal:"f(x) =",ode1:"y' =",ode2:"y'' ="}[M.mode];
+  $("flabel").textContent=lab;
+  $("angwrap").classList.toggle("hidden",M.mode!=="ode2");
+  const al=allowedFor(M.mode);
+  document.querySelectorAll("[data-needs]").forEach(b=>b.disabled=!al.has(b.dataset.needs));
+}
+
+/* ---------- drawing ---------- */
+function renderTerrain(){
+  const t=terrainCv.getContext("2d"); t.clearRect(0,0,W,H);
+  t.fillStyle="#2b2b33";
+  for(const [cx,cy,r] of M.terrain.circles){ t.beginPath(); t.arc(X(cx),Y(cy),r*U,0,7); t.fill(); }
+  t.globalCompositeOperation="destination-out";
+  for(const [cx,cy,r] of M.terrain.craters){ t.beginPath(); t.arc(X(cx),Y(cy),r*U,0,7); t.fill(); }
+  t.globalCompositeOperation="source-over";
+}
+const TEAM={player:["#e69a00","#6b4500","you"], ally:["#1f9d55","#0d4f2b","ally"], enemy:["#2a3fd0","#141f77","enemy"]};
+function draw(upto){
+  ctx.clearRect(0,0,W,H); ctx.fillStyle="#fff"; ctx.fillRect(0,0,W,H);
+  ctx.lineWidth=1; ctx.font="11px monospace"; ctx.fillStyle="#666"; ctx.textAlign="center";
+  for(let x=CFG.XMIN;x<=CFG.XMAX;x++){
+    ctx.strokeStyle=x%5===0?"#ccd":"#e8e8ee"; ctx.beginPath(); ctx.moveTo(X(x),0); ctx.lineTo(X(x),H); ctx.stroke();
+    if(x%5===0&&x!==0) ctx.fillText(x,X(x),Y(0)+13);
+  }
+  ctx.textAlign="right";
+  for(let y=CFG.YMIN;y<=CFG.YMAX;y++){
+    ctx.strokeStyle=y%5===0?"#ccd":"#e8e8ee"; ctx.beginPath(); ctx.moveTo(0,Y(y)); ctx.lineTo(W,Y(y)); ctx.stroke();
+    if(y%5===0&&y!==0) ctx.fillText(y,X(0)-4,Y(y)+4);
+  }
+  ctx.strokeStyle="#555"; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(X(0),0); ctx.lineTo(X(0),H); ctx.moveTo(0,Y(0)); ctx.lineTo(W,Y(0)); ctx.stroke();
+  if(!M) return;
+  ctx.drawImage(terrainCv,0,0);
+
+  const n=upto===undefined?trail.length:upto;
+  if(n>1){
+    ctx.strokeStyle="#d4322a"; ctx.lineWidth=3; ctx.lineJoin="round"; ctx.beginPath();
+    ctx.moveTo(X(trail[0][0]),Y(trail[0][1]));
+    for(let i=1;i<n;i++) ctx.lineTo(X(trail[i][0]),Y(trail[i][1]));
+    ctx.stroke();
+  }
+  ctx.textAlign="center"; ctx.font="bold 12px sans-serif";
+  M.soldiers.forEach(s=>{
+    const [fill,stroke,label]=TEAM[s.team], px=X(s.x), py=Y(s.y);
+    if(!s.alive){
+      ctx.strokeStyle="#888"; ctx.lineWidth=3; ctx.beginPath();
+      ctx.moveTo(px-7,py-7); ctx.lineTo(px+7,py+7); ctx.moveTo(px+7,py-7); ctx.lineTo(px-7,py+7); ctx.stroke(); return;
+    }
+    ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(px,py,7,0,7); ctx.fill(); ctx.stroke();
+    if(s.team==="enemy"){ ctx.beginPath(); ctx.arc(px,py,CFG.SOLDIER_R*U,0,7); ctx.strokeStyle="rgba(42,63,208,.45)"; ctx.lineWidth=1.5; ctx.stroke(); }
+    ctx.fillStyle=stroke; ctx.fillText(label,px,py-12);
+  });
+}
+
+/* ---------- firing ---------- */
 function fire(){
-  if(anim||solved) return;
+  if(anim||!M||M.over) return;
   let res;
-  try{ res=simulate(compile(inp.value), G); }
-  catch(e){ setStatus("⚠ "+e.message,"err"); return; }
-  attempts++; trail=res.pts; updateStats();
+  try{
+    const f=compile(inp.value, allowedFor(M.mode));
+    res=simulate(f,M,{angle:parseFloat($("angle").value)||0});
+  }catch(e){ setStatus("⚠ "+e.message,"err"); return; }
+  M.shots++; trail=res.pts; updateStats();
   $("fire").disabled=true; setStatus("","");
   const t0=performance.now(), dur=Math.min(2200,600+trail.length*1.2);
   anim=requestAnimationFrame(function step(now){
     const k=Math.min(1,(now-t0)/dur), n=Math.max(2,Math.floor(k*trail.length));
     draw(n);
     if(k<1){ anim=requestAnimationFrame(step); return; }
-    anim=null; $("fire").disabled=false; draw();
-    if(res.hit){
-      solved=true; $("fire").disabled=true;
-      setStatus("🎯 Direct hit in "+attempts+" shot"+(attempts>1?"s":"")+"!  Flag: <code>"+CFG.FLAG+"</code>","ok");
-    } else {
-      setStatus("Missed — closest pass was "+res.closest.toFixed(2)+" units from the target.","err");
-    }
+    anim=null; finishShot(res);
   });
 }
+function finishShot(res){
+  let en=0, al=0;
+  res.killed.forEach(i=>{ const s=M.soldiers[i]; s.alive=false; if(s.team==="enemy") en++; else al++; });
+  M.friendly+=al;
+  if(res.impact){ M.terrain.craters.push([res.impact[0],res.impact[1],CFG.CRATER_R]); renderTerrain(); }
+  $("fire").disabled=false; draw(); updateStats();
 
-/* ======================= UI WIRING ======================= */
+  const left=M.soldiers.filter(s=>s.team==="enemy"&&s.alive).length;
+  let msg="";
+  if(en) msg+="💥 "+en+" enemy"+(en>1?"ies":"")+" down. ";
+  if(al) msg+="😬 Friendly fire: "+al+" ally down. ";
+  if(!en&&!al) msg+="Missed"+(isFinite(res.closest)?" — closest pass "+res.closest.toFixed(2)+" units from an enemy":"")+". ";
+  if(res.impact) msg+="Hit an obstacle. ";
+
+  if(left===0){
+    M.over=true; $("fire").disabled=true;
+    if(view==="tutorial"){ setStatus(msg+"✔ Level clear!","ok"); $("tut-next").disabled=false; }
+    else setStatus(msg+"<br>🎯 All enemies eliminated in "+M.shots+" shot"+(M.shots>1?"s":"")+"! Flag: <code>"+CFG.FLAG+"</code>","ok");
+  } else setStatus(msg+left+" enemy"+(left>1?"ies":"")+" left.", (en||al)?"ok":"err");
+}
+
+/* ---------- misc UI ---------- */
 function setStatus(html,cls){ const s=$("status"); s.innerHTML=html; s.className="status "+(cls||""); }
-function updateStats(){ $("stats").textContent="Player ("+G.px+", "+G.py+")  ·  Shots: "+attempts; }
+function updateStats(){
+  const P=M.soldiers[0], left=M.soldiers.filter(s=>s.team==="enemy"&&s.alive).length;
+  $("stats").textContent="You ("+P.x+", "+P.y+") · Enemies left: "+left+" · Shots: "+M.shots+(M.seed?" · Seed "+M.seed:"");
+}
 function updateOffset(){
+  const el=$("off");
+  if(!M||M.mode!=="normal"){ el.textContent = M&&M.mode==="ode2" ? "y₀ = "+M.soldiers[0].y : M ? "y₀ = "+M.soldiers[0].y : ""; return; }
   try{
-    const f0=compile(inp.value)(G.px);
+    const f0=compile(inp.value,allowedFor("normal"))(M.soldiers[0].x,0,0);
     if(!isFinite(f0)) throw 0;
-    const o=G.py-f0; $("off").textContent=(o<0?"- ":"+ ")+Math.abs(o).toFixed(3);
-  }catch{ $("off").textContent="+ ?"; }
+    const o=M.soldiers[0].y-f0; el.textContent=(o<0?"- ":"+ ")+Math.abs(o).toFixed(3);
+  }catch{ el.textContent="+ ?"; }
 }
 inp.addEventListener("input",updateOffset);
 inp.addEventListener("keydown",e=>{ if(e.key==="Enter") fire(); });
 $("fire").addEventListener("click",fire);
-$("again").addEventListener("click",newGame);
+
+$("b-new").addEventListener("click",()=>{ if(anim) return; startPlay(true); });
+$("b-retry").addEventListener("click",()=>{ if(anim) return; startPlay(false); });
+$("s-mode").addEventListener("change",()=>{ if(!anim) startPlay(true); });
+
+$("tut-hint").addEventListener("click",()=>{
+  $("tut-hinttext").innerHTML=" Try: <code>"+TUTORIAL[tutIdx].hint+"</code> ";
+  inp.value=TUTORIAL[tutIdx].hint; updateOffset();
+});
+$("tut-next").addEventListener("click",()=>{
+  if(tutIdx<TUTORIAL.length-1) startTutorial(tutIdx+1);
+  else go("home");
+});
 
 document.querySelectorAll(".pad button").forEach(b=>b.addEventListener("click",()=>{
   if(b.disabled) return;
-  const k=b.dataset.k, ins=b.dataset.i;
-  const s=inp.selectionStart, e=inp.selectionEnd;
+  const k=b.dataset.k, ins=b.dataset.i, s=inp.selectionStart, e=inp.selectionEnd;
   if(ins!==undefined){ inp.setRangeText(ins,s,e,"end"); }
   else if(k==="clear"){ inp.value=""; }
   else if(k==="back"){ if(s!==e) inp.setRangeText("",s,e,"end"); else if(s>0) inp.setRangeText("",s-1,s,"end"); }
-  else if(k==="left"){ inp.setSelectionRange(Math.max(0,s-1),Math.max(0,s-1)); }
-  else if(k==="right"){ inp.setSelectionRange(Math.min(inp.value.length,e+1),Math.min(inp.value.length,e+1)); }
+  else if(k==="left"){ const p=Math.max(0,s-1); inp.setSelectionRange(p,p); }
+  else if(k==="right"){ const p=Math.min(inp.value.length,e+1); inp.setSelectionRange(p,p); }
   inp.focus(); updateOffset();
 }));
 
-newGame();
+show("home");
 </script>
 </body>
 </html>
