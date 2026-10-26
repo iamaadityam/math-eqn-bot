@@ -6,102 +6,162 @@
 <title>GraphShot</title>
 <style>
   :root{
-    --bg:#0f2a1f; --panel:#14392a; --key:#1d5a40; --key-hi:#2a7d59; --ink:#e9fff3;
-    --accent:#ffb020; --bad:#ff6b6b; --good:#5dffa0;
+    --bg:#0b0b0c; --ink:#e9e4de; --dim:#8a847d; --line:#2a2826; --panel:#121110;
+    --acc:#ff732d; --acc2:#ffb08a; --bad:#ff5a4d; --good:#7be08f;
+    --mono:"JetBrains Mono","IBM Plex Mono","SFMono-Regular",Consolas,"Courier New",monospace;
   }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Comic Sans MS","Trebuchet MS",system-ui,sans-serif;
-       min-height:100vh;padding:12px 12px 28px}
-  .screen{width:100%;max-width:980px;margin:0 auto}
+  *{box-sizing:border-box;border-radius:0}
+  html{background:var(--bg)}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--mono);font-size:14px;line-height:1.6;
+       min-height:100vh;padding:18px 14px 70px;text-transform:lowercase;
+       cursor:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><path d='M2 2 L2 19 L7 14.5 L10.5 22 L13.5 20.7 L10 13.3 L16.5 13 Z' fill='%23ff732d' stroke='%230b0b0c' stroke-width='1.5' stroke-linejoin='round'/></svg>") 2 2, auto}
+  button,select,input,a,label,summary{cursor:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><circle cx='12' cy='12' r='7' fill='none' stroke='%23ff732d' stroke-width='2'/><circle cx='12' cy='12' r='2' fill='%23ff732d'/></svg>") 12 12, pointer}
+  input,code,.frow input,#status code,.fx input,.off,textarea{text-transform:none}
+  ::selection{background:var(--acc);color:#000}
+
+  /* spinning background logo (original emblem, fixed behind everything) */
+  #bgspin{position:fixed;left:50%;top:50%;width:min(92vmin,760px);height:min(92vmin,760px);margin:calc(min(92vmin,760px)/-2) 0 0 calc(min(92vmin,760px)/-2);
+          opacity:.07;pointer-events:none;z-index:0;animation:spin 60s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .screen{position:relative;z-index:1;width:100%;max-width:960px;margin:0 auto}
   .hidden{display:none!important}
-  h1{margin:4px 0 2px;font-size:22px;letter-spacing:.5px}
-  h2{margin:8px 0}
-  h3{margin:20px 0 6px;color:var(--accent)}
-  button{font-family:inherit;color:var(--ink);cursor:pointer}
-  code{background:#0007;padding:1px 6px;border-radius:4px;font-family:Consolas,monospace;color:#fff}
 
-  /* home */
-  #home{text-align:center;padding-top:6vh}
-  #home .logo{font-size:56px;margin:0;letter-spacing:2px}
-  #home .logo span{color:var(--accent)}
-  #home .tag{opacity:.75;margin:6px 0 30px}
-  .menu{display:flex;flex-direction:column;gap:12px;max-width:320px;margin:0 auto}
-  .menu button{background:var(--key);border:2px solid #0b2a1d;border-radius:10px;font-size:22px;padding:14px}
-  .menu button:hover{background:var(--key-hi)}
-  .menu button.primary{background:#c0392b;border-color:#ff8f84}
-  .menu button.primary:hover{background:#e04535}
+  h1,h2,h3{font-weight:700;margin:0}
+  h1{font-size:18px} h2{font-size:15px;margin:8px 0}
+  h3{font-size:14px;margin:22px 0 6px;color:var(--acc)}
+  h3::before,.sec::before{content:"// ";color:var(--dim)}
+  code{background:#1a1816;border:1px solid var(--line);padding:0 5px;color:var(--acc2);font-family:var(--mono);font-size:13px}
+  b{color:#fff}
+  a{color:var(--acc)}
 
-  .topbar{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
-  .topbar .back{background:var(--panel);border:1px solid var(--key);border-radius:6px;padding:6px 12px}
+  /* ---------- home ---------- */
+  #home{max-width:620px;padding-top:6vh}
+  #home .logo{font-size:15px;color:var(--dim);margin:0 0 26px;font-weight:400}
+  #home .logo b{color:var(--acc)}
+  .hello{font-size:22px;margin:0 0 4px}
+  .hello b{color:var(--acc)}
+  .blink{display:inline-block;width:.6em;height:1em;background:var(--acc);vertical-align:-2px;animation:bl 1.05s steps(1) infinite}
+  @keyframes bl{50%{opacity:0}}
+  .sec{margin:26px 0 6px;color:var(--dim);font-size:13px}
+  ul.list{list-style:none;padding:0;margin:0}
+  ul.list li{padding:1px 0}
+  ul.list li .d{color:var(--dim);margin-right:10px}
+  ul.nav li a,ul.nav li button{all:unset;display:inline-block;color:var(--ink);cursor:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><circle cx='12' cy='12' r='7' fill='none' stroke='%23ff732d' stroke-width='2'/><circle cx='12' cy='12' r='2' fill='%23ff732d'/></svg>") 12 12, pointer;padding:2px 0;font-size:16px}
+  ul.nav li button::before{content:"> ";color:var(--dim)}
+  ul.nav li button:hover,ul.nav li button:focus-visible{color:var(--acc)}
+  ul.nav li button:hover::before{content:">> ";color:var(--acc)}
+  ul.nav li .hint{color:var(--dim);font-size:12px;margin-left:10px}
+
+  /* ---------- chrome shared by inner screens ---------- */
+  .topbar{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:8px}
   .topbar .grow{flex:1}
+  .topbar #stats{color:var(--dim);font-size:12px}
+  button{font-family:inherit;font-size:inherit;color:var(--ink)}
+  .back,.settings button,#tut button{background:transparent;border:1px solid var(--line);padding:4px 10px}
+  .back:hover,.settings button:hover,#tut button:hover:not(:disabled){border-color:var(--acc);color:var(--acc)}
 
-  /* settings */
-  .settings{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;background:var(--panel);padding:8px 10px;border-radius:8px;margin-bottom:8px;font-size:13px}
+  .settings{display:flex;gap:10px 14px;flex-wrap:wrap;align-items:flex-end;border:1px solid var(--line);background:var(--panel);padding:8px 10px;margin-bottom:10px;font-size:12px;color:var(--dim)}
   .settings label{display:flex;flex-direction:column;gap:2px}
-  .settings select,.settings input{background:#0b2a1d;color:var(--ink);border:1px solid var(--key);border-radius:4px;padding:5px;font-family:inherit;width:100%}
-  .settings input{width:64px}
-  .settings button{background:var(--key);border:1px solid #0b2a1d;border-radius:6px;padding:7px 12px}
-  .settings button:hover{background:var(--key-hi)}
+  .settings select,.settings input{background:#000;color:var(--ink);border:1px solid var(--line);padding:4px 6px;font-family:inherit;font-size:13px;width:100%}
+  .settings input{width:58px}
+  .settings select:focus,.settings input:focus{outline:0;border-color:var(--acc)}
 
-  /* tutorial banner */
-  #tut{background:#0b2a1d;border:2px dashed var(--accent);border-radius:8px;padding:10px 12px;margin-bottom:8px}
+  #tut{border:1px dashed var(--acc);background:var(--panel);padding:10px 12px;margin-bottom:10px}
+  #tut b#tut-title{color:var(--acc)}
   #tut .row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center}
-  #tut button{background:var(--key);border:1px solid #0b2a1d;border-radius:6px;padding:6px 12px}
-  #tut button:disabled{opacity:.4;cursor:default}
+  #tut button:disabled{opacity:.35;cursor:default}
 
-  canvas{width:100%;aspect-ratio:5/3;background:#fff;border:3px solid var(--key);border-radius:6px;display:block}
-  .bar{display:flex;gap:8px;align-items:center;margin:10px 0}
-  .fx{flex:1;display:flex;align-items:center;background:#fff;border-radius:6px;border:3px solid var(--key);overflow:hidden}
-  .fx label{background:var(--panel);padding:10px;font-size:14px;white-space:nowrap}
-  .fx input{flex:1;min-width:0;border:0;outline:0;padding:10px;font-size:20px;font-family:Consolas,monospace;color:#111}
-  .fx .off{padding:0 10px;color:#333;font-family:Consolas,monospace;font-size:16px;white-space:nowrap}
-  .angle{display:flex;align-items:center;gap:4px;background:var(--panel);padding:0 8px;height:100%;font-size:13px;white-space:nowrap}
-  .angle input{width:58px;border:1px solid var(--key);background:#0b2a1d;color:var(--ink);padding:4px;border-radius:4px}
-  #fire{background:#c0392b;border:2px solid #ff8f84;border-radius:6px;font-size:22px;padding:8px 26px}
-  #fire:hover{background:#e04535} #fire:disabled{opacity:.5;cursor:default}
+  canvas{width:100%;aspect-ratio:5/3;background:#0e0d0c;border:1px solid var(--line);display:block}
+  .legend{display:flex;gap:6px 16px;justify-content:center;font-size:12px;margin-top:8px;flex-wrap:wrap;color:var(--dim)}
+  .legend i{display:inline-block;width:9px;height:9px;margin-right:6px;vertical-align:0;border-radius:50%!important}
+
+  .bar{display:flex;gap:8px;align-items:stretch;margin:12px 0}
+  .fx{flex:1;display:flex;align-items:stretch;background:#000;border:1px solid var(--line);min-width:0}
+  .fx:focus-within{border-color:var(--acc)}
+  .fx label{padding:10px;color:var(--acc);white-space:nowrap;border-right:1px solid var(--line)}
+  .fx input{flex:1;min-width:0;border:0;outline:0;background:transparent;padding:10px;font-size:18px;font-family:var(--mono);color:var(--ink)}
+  .fx input::placeholder{color:#4a4640}
+  .fx .off{padding:0 10px;color:var(--dim);display:flex;align-items:center;white-space:nowrap}
+  .angle{display:flex;align-items:center;gap:6px;padding:0 8px;color:var(--dim);font-size:12px;white-space:nowrap;border-left:1px solid var(--line)}
+  .angle input{width:56px;border:1px solid var(--line);background:#000;color:var(--ink);padding:3px 4px;font-size:13px}
+  #fire{background:var(--acc);color:#000;border:1px solid var(--acc);font-weight:700;font-size:16px;padding:0 22px}
+  #fire:hover:not(:disabled){background:#000;color:var(--acc)}
+  #fire:disabled{opacity:.35;cursor:default}
+
+  .fieldbox{border:1px solid var(--line);background:var(--panel);padding:8px 10px;margin:0 0 12px;font-size:12px}
+  .fieldhead{color:var(--dim);margin-bottom:6px}
+  .frow{display:flex;align-items:center;gap:8px;margin:4px 0}
+  .frow b{min-width:30px;color:var(--good)}
+  .frow input{flex:1;min-width:0;background:#000;color:var(--ink);border:1px solid var(--line);padding:6px 8px;font-size:14px;font-family:var(--mono)}
+  .frow input:focus{outline:0;border-color:var(--good)}
+  .frow.down{opacity:.35}
+
   .pads{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
-  .pad{display:grid;gap:5px;background:var(--panel);padding:8px;border-radius:8px;grid-template-columns:repeat(3,56px)}
-  .pad button{background:var(--key);border:2px solid #0b2a1d;border-radius:6px;height:42px;font-size:18px}
-  .pad button:hover{background:var(--key-hi)}
-  .pad button:disabled{opacity:.35;cursor:default}
-  .status{min-height:44px;text-align:center;font-size:17px;margin-top:10px}
+  .pad{display:grid;gap:3px;grid-template-columns:repeat(3,54px);padding:6px;border:1px solid var(--line);background:var(--panel)}
+  .pad button{background:#000;border:1px solid var(--line);height:38px;font-size:15px}
+  .pad button:hover:not(:disabled){border-color:var(--acc);color:var(--acc)}
+  .pad button:active:not(:disabled){background:var(--acc);color:#000}
+  .pad button:disabled{opacity:.25;cursor:default}
+
+  .status{min-height:46px;margin-top:12px;font-size:14px;color:var(--dim);padding-left:2px}
+  .status::before{content:"> ";color:var(--acc)}
+  .status:empty::before{content:"> _"}
   .status.ok{color:var(--good)} .status.err{color:var(--bad)}
   .status code{user-select:all}
-  .fieldbox{background:var(--panel);border-radius:8px;padding:8px 10px;margin:0 0 10px;font-size:13px}
-  .fieldhead{opacity:.85;margin-bottom:6px}
-  .frow{display:flex;align-items:center;gap:8px;margin:4px 0}
-  .frow b{min-width:34px;color:#7dffb0}
-  .frow input{flex:1;min-width:0;background:#fff;color:#111;border:2px solid var(--key);border-radius:5px;padding:6px 8px;font-size:16px;font-family:Consolas,monospace}
-  .frow.down{opacity:.4}
-  .legend{display:flex;gap:14px;justify-content:center;font-size:13px;margin-top:6px;flex-wrap:wrap;opacity:.9}
-  .legend i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:4px;vertical-align:-1px}
 
-  /* help / leaderboard */
-  .card{background:var(--panel);border-radius:10px;padding:14px 18px;line-height:1.55;font-size:15px}
+  .card{border:1px solid var(--line);background:var(--panel);padding:14px 18px;line-height:1.65;font-size:14px}
+  .card h3:first-child{margin-top:0}
   .card table{border-collapse:collapse;width:100%;margin:6px 0}
-  .card td,.card th{border-bottom:1px solid #ffffff22;padding:5px 8px;text-align:left;vertical-align:top}
-  .soon{text-align:center;padding:40px 10px;opacity:.85}
+  .card td,.card th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+  .card th{color:var(--dim);font-weight:400}
+  .soon{text-align:center;padding:40px 10px;color:var(--dim)}
+
+  /* ---------- terminal footer ---------- */
+  #foot{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--bg);border-top:1px solid var(--line);padding:6px 14px;font-size:12px;color:var(--dim);display:flex;justify-content:space-between;gap:10px}
+  #foot b{color:var(--acc);font-weight:400}
+  @media (max-width:560px){ .pad{grid-template-columns:repeat(3,48px)} #foot span:last-child{display:none} }
+  @media (prefers-reduced-motion:reduce){ #bgspin,.blink{animation:none} }
 </style>
 </head>
 <body>
+<svg id="bgspin" viewBox="-100 -100 200 200" aria-hidden="true" fill="none" stroke="#ff732d" stroke-width="1.2">
+  <circle r="96"/><circle r="78" stroke-dasharray="2 5"/><circle r="52"/>
+  <path d="M-96 0H96M0-96V96" stroke-width=".8"/>
+  <path d="M-67.9-67.9L67.9 67.9M67.9-67.9L-67.9 67.9" stroke-width=".5"/>
+  <path d="M-70 0 Q-35 -45 0 0 T70 0" stroke-width="2.2"/>
+  <circle cx="-70" cy="0" r="4" fill="#ff732d"/><circle cx="70" cy="0" r="4" fill="#ff732d"/>
+</svg>
 
 <!-- ================= HOME ================= -->
 <div id="home" class="screen">
-  <h1 class="logo">Graph<span>Shot</span></h1>
-  <p class="tag">Shoot with maths. Write the equation, hit the target.</p>
-  <div class="menu">
-    <button class="primary" data-go="play">▶ Play</button>
-    <button data-go="board">🏆 Leaderboards</button>
-    <button data-go="tutorial">🎓 Tutorial</button>
-    <button data-go="help">❓ Help</button>
-  </div>
+  <p class="logo"><b>graphshot</b> / math artillery club</p>
+  <p class="hello">welcome, <b>user</b><span class="blink"></span></p>
+  <div class="sec">updates</div>
+  <ul class="list">
+    <li><span class="d">10.26</span>new look. who dis.</li>
+    <li><span class="d">10.25</span>shields, parry bots &amp; assist fields are live</li>
+    <li><span class="d">10.25</span>tutorial has 7 levels now. go learn derivatives!!</li>
+  </ul>
+  <div class="sec">navigation</div>
+  <ul class="list nav">
+    <li><button data-go="play">play</button><span class="hint">drop in, hit everyone</span></li>
+    <li><button data-go="board">leaderboards</button><span class="hint">soon</span></li>
+    <li><button data-go="tutorial">tutorial</button><span class="hint">7 short levels</span></li>
+    <li><button data-go="help">help</button><span class="hint">how the equations work</span></li>
+  </ul>
+  <div class="sec">tips</div>
+  <ul class="list">
+    <li><span class="d">-</span>your curve always starts at your soldier</li>
+    <li><span class="d">-</span>x is the map's x unless you change it in settings</li>
+    <li><span class="d">-</span>red circle = derivative, purple = parry, green = assist</li>
+  </ul>
 </div>
 
 <!-- ================= GAME (play + tutorial) ================= -->
 <div id="game" class="screen hidden">
   <div class="topbar">
     <button class="back" data-go="home">← Menu</button>
-    <h1 id="gtitle" class="grow">Play</h1>
+    <h1 id="gtitle" class="grow">play</h1>
     <span id="stats"></span>
   </div>
 
@@ -139,18 +199,18 @@
   <canvas id="cv" width="1000" height="600"></canvas>
 
   <div class="legend">
-    <span><i style="background:#e69a00"></i>You</span>
-    <span><i style="background:#2a3fd0"></i>Enemy</span>
-    <span><i style="background:#1f9d55"></i>Ally + assist field</span>
-    <span><i style="background:#c0392b"></i>Shield (derivative)</span>
-    <span><i style="background:#8e44ad"></i>Parry bot field</span>
-    <span><i style="background:#2b2b33"></i>Obstacle</span>
+    <span><i style="background:#ff732d"></i>You</span>
+    <span><i style="background:#62b6ff"></i>Enemy</span>
+    <span><i style="background:#7be08f"></i>ally + assist field</span>
+    <span><i style="background:#ff5a4d"></i>Shield (derivative)</span>
+    <span><i style="background:#b58cff"></i>Parry bot field</span>
+    <span><i style="background:#6b6660"></i>Obstacle</span>
   </div>
 
   <div class="bar">
     <div class="fx">
       <label id="flabel">f(x) =</label>
-      <input id="expr" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="none" placeholder="e.g. 0.3*x  or  sin(x)*5">
+      <input id="expr" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="none" placeholder="0.3*x   or   sin(x)*5">
       <span class="angle hidden" id="angwrap">angle° <input id="angle" type="number" value="0" min="-85" max="85"></span>
       <span class="off" id="off">+ 0.000</span>
     </div>
@@ -276,6 +336,8 @@
     <p>Rankings will show up here once scores are being recorded.</p>
   </div>
 </div>
+
+<div id="foot"><span><b>user</b>@graphshot // ver. 0.2.0-b</span><span id="clock"></span></div>
 
 <script>
 /* =====================================================================
@@ -690,57 +752,58 @@ function setMode(){
 /* ---------- drawing ---------- */
 function renderTerrain(){
   const t=terrainCv.getContext("2d"); t.clearRect(0,0,W,H);
-  t.fillStyle="#2b2b33";
+  t.fillStyle="#6b6660"; t.strokeStyle="#8d877f"; t.lineWidth=1.5;
   for(const [cx,cy,r] of M.terrain.circles){ t.beginPath(); t.arc(X(cx),Y(cy),r*U,0,7); t.fill(); }
   t.globalCompositeOperation="destination-out";
   for(const [cx,cy,r] of M.terrain.craters){ t.beginPath(); t.arc(X(cx),Y(cy),r*U,0,7); t.fill(); }
   t.globalCompositeOperation="source-over";
 }
-const TEAM={player:["#e69a00","#6b4500","you"], ally:["#1f9d55","#0d4f2b","ally"], enemy:["#2a3fd0","#141f77","enemy"]};
+const MONO='"JetBrains Mono","IBM Plex Mono",Consolas,"Courier New",monospace';
+const TEAM={player:["#ff732d","#ffd0b8","you"], ally:["#7be08f","#b9f2c4","ally"], enemy:["#62b6ff","#b5dcff","enemy"]};
 const KIND_LABEL={bot:"parry bot",shield:"shielded"};
 function draw(upto){
-  ctx.clearRect(0,0,W,H); ctx.fillStyle="#fff"; ctx.fillRect(0,0,W,H);
-  ctx.lineWidth=1; ctx.font="11px monospace"; ctx.fillStyle="#666"; ctx.textAlign="center";
+  ctx.clearRect(0,0,W,H); ctx.fillStyle="#0e0d0c"; ctx.fillRect(0,0,W,H);
+  ctx.lineWidth=1; ctx.font="11px "+MONO; ctx.fillStyle="#6f6a63"; ctx.textAlign="center";
   for(let x=CFG.XMIN;x<=CFG.XMAX;x++){
-    ctx.strokeStyle=x%5===0?"#ccd":"#e8e8ee"; ctx.beginPath(); ctx.moveTo(X(x),0); ctx.lineTo(X(x),H); ctx.stroke();
+    ctx.strokeStyle=x%5===0?"#2e2b28":"#1a1817"; ctx.beginPath(); ctx.moveTo(X(x),0); ctx.lineTo(X(x),H); ctx.stroke();
     if(x%5===0&&x!==0) ctx.fillText(x,X(x),Y(0)+13);
   }
   ctx.textAlign="right";
   for(let y=CFG.YMIN;y<=CFG.YMAX;y++){
-    ctx.strokeStyle=y%5===0?"#ccd":"#e8e8ee"; ctx.beginPath(); ctx.moveTo(0,Y(y)); ctx.lineTo(W,Y(y)); ctx.stroke();
+    ctx.strokeStyle=y%5===0?"#2e2b28":"#1a1817"; ctx.beginPath(); ctx.moveTo(0,Y(y)); ctx.lineTo(W,Y(y)); ctx.stroke();
     if(y%5===0&&y!==0) ctx.fillText(y,X(0)-4,Y(y)+4);
   }
-  ctx.strokeStyle="#555"; ctx.lineWidth=1.5;
+  ctx.strokeStyle="#6f6a63"; ctx.lineWidth=1.2;
   ctx.beginPath(); ctx.moveTo(X(0),0); ctx.lineTo(X(0),H); ctx.moveTo(0,Y(0)); ctx.lineTo(W,Y(0)); ctx.stroke();
   if(!M) return;
   ctx.drawImage(terrainCv,0,0);
   M.zones.forEach(z=>{
     if(!zoneLive(M,z)) return;
     const px=X(z.x), py=Y(z.y), rr=z.r*U;
-    const col = z.kind==="perimeter"?["rgba(192,57,43,.10)","#c0392b"]: z.kind==="parry"?["rgba(142,68,173,.14)","#8e44ad"]:["rgba(31,157,85,.10)","#1f9d55"];
+    const col = z.kind==="perimeter"?["rgba(255,90,77,.10)","#ff5a4d"]: z.kind==="parry"?["rgba(181,140,255,.13)","#b58cff"]:["rgba(123,224,143,.09)","#7be08f"];
     ctx.fillStyle=col[0]; ctx.strokeStyle=col[1]; ctx.lineWidth=2; ctx.setLineDash(z.kind==="parry"?[]:[8,6]);
     ctx.beginPath(); ctx.arc(px,py,rr,0,7); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle=col[1]; ctx.font="bold 11px sans-serif"; ctx.textAlign="center";
-    ctx.fillText(z.kind==="perimeter"?"shield  d/dx":z.kind==="parry"?"parry field":(z.label||"assist"),px,py+rr+12);
+    ctx.fillStyle=col[1]; ctx.font="11px "+MONO; ctx.textAlign="center";
+    ctx.fillText(z.kind==="perimeter"?"shield d/dx":z.kind==="parry"?"parry field":(z.label||"assist"),px,py+rr+12);
   });
 
   const n=upto===undefined?trail.length:upto;
   if(n>1){
-    ctx.strokeStyle="#d4322a"; ctx.lineWidth=3; ctx.lineJoin="round"; ctx.beginPath();
+    ctx.strokeStyle="#ff732d"; ctx.shadowColor="#ff732d"; ctx.shadowBlur=8; ctx.lineWidth=2.5; ctx.lineJoin="round"; ctx.beginPath();
     ctx.moveTo(X(trail[0][0]),Y(trail[0][1]));
     for(let i=1;i<n;i++) ctx.lineTo(X(trail[i][0]),Y(trail[i][1]));
-    ctx.stroke();
+    ctx.stroke(); ctx.shadowBlur=0;
   }
-  ctx.textAlign="center"; ctx.font="bold 12px sans-serif";
+  ctx.textAlign="center"; ctx.font="bold 11px "+MONO;
   M.soldiers.forEach(s=>{
     const [fill,stroke,label]=TEAM[s.team], px=X(s.x), py=Y(s.y);
     if(!s.alive){
-      ctx.strokeStyle="#888"; ctx.lineWidth=3; ctx.beginPath();
+      ctx.strokeStyle="#6f6a63"; ctx.lineWidth=2.5; ctx.beginPath();
       ctx.moveTo(px-7,py-7); ctx.lineTo(px+7,py+7); ctx.moveTo(px+7,py-7); ctx.lineTo(px-7,py+7); ctx.stroke(); return;
     }
     ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.arc(px,py,7,0,7); ctx.fill(); ctx.stroke();
-    if(s.team==="enemy"){ ctx.beginPath(); ctx.arc(px,py,CFG.SOLDIER_R*U,0,7); ctx.strokeStyle="rgba(42,63,208,.45)"; ctx.lineWidth=1.5; ctx.stroke(); }
+    ctx.beginPath(); ctx.arc(px,py,6,0,7); ctx.fill(); ctx.stroke();
+    if(s.team==="enemy"){ ctx.beginPath(); ctx.arc(px,py,CFG.SOLDIER_R*U,0,7); ctx.strokeStyle="rgba(98,182,255,.45)"; ctx.lineWidth=1.5; ctx.stroke(); }
     ctx.fillStyle=stroke; ctx.fillText(KIND_LABEL[s.kind]||label,px,py-12);
   });
 }
@@ -854,6 +917,7 @@ document.querySelectorAll(".pad button").forEach(b=>b.addEventListener("click",(
 }));
 
 show("home");
+(function tick(){ const d=new Date(); $("clock").textContent=d.toTimeString().slice(0,8); setTimeout(tick,1000); })();
 </script>
 </body>
 </html>
