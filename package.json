@@ -1,0 +1,15 @@
+{
+  "name": "graphshot-online",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "py server.py || python server.py || python3 server.py",
+    "test": "py -m unittest discover tests || python -m unittest discover tests",
+    "bot:node": "node bots/node_bot.mjs",
+    "bot:python": "py bots/python_bot.py || python bots/python_bot.py"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Graphshot — Multiplayer Math Artillery Arena</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --o: #ff732d;
+    --ink: #141211;
+    --paper: #f6f1e3;
+    --paper2: #ebe4d0;
+    --paper3: #ddd4ba;
+    --mut: #6d6657;
+    --blue: #3b5bff;
+    --green: #2fa84f;
+    --mono: "Space Mono", Consolas, monospace;
+    --pix: "Silkscreen", monospace;
+    --sh: 4px 4px 0 var(--ink);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--o);
+    background-image: radial-gradient(rgba(20,18,17,0.2) 1px, transparent 1.5px);
+    background-size: 8px 8px;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 14px;
+    display: grid;
+    place-items: center;
+    padding: 24px 12px;
+  }
+  main {
+    background: var(--paper);
+    border: 4px solid var(--ink);
+    box-shadow: 10px 10px 0 var(--ink);
+    width: min(880px, 96vw);
+    max-width: 880px;
+  }
+  header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 12px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--pix);
+    font-size: 13px;
+    letter-spacing: 0.05em;
+  }
+  header b { color: var(--o); font-weight: normal; }
+  .top-links a {
+    color: var(--paper2);
+    text-decoration: underline;
+    font-family: var(--mono);
+    font-size: 12px;
+    margin-left: 12px;
+  }
+  .clockbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 18px;
+    background: var(--paper2);
+    border-bottom: 3px solid var(--ink);
+    font-size: 13px;
+  }
+  .clockbar strong { font-family: var(--pix); color: var(--ink); }
+  section { padding: 22px; }
+  .hidden { display: none !important; }
+  h1 {
+    font-family: var(--pix);
+    font-size: 20px;
+    margin: 0 0 10px;
+    text-transform: lowercase;
+  }
+  h2 { font-size: 15px; margin: 16px 0 8px; }
+  p { margin: 6px 0 14px; line-height: 1.5; }
+  button, input, textarea {
+    font-family: var(--mono);
+    font-size: 14px;
+    border: 3px solid var(--ink);
+    padding: 9px 14px;
+    background: #fff;
+    box-sizing: border-box;
+  }
+  button {
+    background: var(--o);
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 var(--ink);
+    margin: 6px 8px 6px 0;
+    transition: transform 0.05s, box-shadow 0.05s;
+  }
+  button:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 var(--ink);
+  }
+  button.secondary { background: var(--paper2); }
+  button.action-btn { background: var(--ink); color: var(--paper); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  textarea {
+    width: 100%;
+    height: 72px;
+    font-size: 15px;
+    font-weight: bold;
+    resize: vertical;
+  }
+  .presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .presets button {
+    font-size: 11px;
+    padding: 4px 8px;
+    margin: 0;
+    background: var(--paper3);
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 8px;
+    padding: 0;
+    list-style: none;
+    margin: 14px 0;
+  }
+  .grid li {
+    border: 2px solid var(--ink);
+    background: var(--paper2);
+    padding: 8px;
+    font-size: 12px;
+  }
+  .grid li.you {
+    border-color: var(--o);
+    background: #fff3ec;
+    box-shadow: 3px 3px 0 var(--ink);
+    font-weight: bold;
+  }
+  .grid li.bot { opacity: 0.65; }
+  .grid li .badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 1px 4px;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    margin-top: 4px;
+  }
+  .canvas-wrap {
+    position: relative;
+    width: 100%;
+    border: 3px solid var(--ink);
+    background: #101010;
+    margin: 14px 0;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .scores-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 14px;
+  }
+  .scores-table th, .scores-table td {
+    border: 2px solid var(--ink);
+    padding: 6px 10px;
+    text-align: left;
+  }
+  .scores-table th { background: var(--paper3); font-family: var(--pix); font-size: 11px; }
+  .scores-table tr.you { background: #ffe7d9; font-weight: bold; }
+  #status {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 10px 16px;
+    font-size: 12px;
+    border-top: 2px solid var(--ink);
+  }
+  .err-msg { color: #ff5544; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<main>
+  <header>
+    <span><b>●</b> GRAPHSHOT — AUTHORITATIVE MULTIPLAYER ARENA</span>
+    <span class="top-links">
+      <a href="/solo">solo sandbox & tutorial</a>
+    </span>
+  </header>
+
+  <div class="clockbar">
+    <span id="phase">Connecting to arena…</span>
+    <strong id="clock">--:--</strong>
+  </div>
+
+  <!-- Sign In Section -->
+  <section id="login">
+    <h1>10 cannons. 1 circular arena. simultaneous volley.</h1>
+    <p>Every 5 minutes, a new round opens for registration. Calculate your math curve, angle your shot, and eliminate rival cannons. A killed shooter's beam terminates immediately.</p>
+    <div>
+      <a href="/auth/rctf/login"><button id="btn-rctf">sign in with rCTF</button></a>
+      <a href="/solo"><button class="secondary">play solo practice</button></a>
+    </div>
+    <div id="dev-auth-box" class="hidden" style="margin-top: 18px; padding-top: 14px; border-top: 2px dashed var(--mut);">
+      <h2>Dev Mode Login</h2>
+      <input type="text" id="dev-name" value="Player-1" style="width: 180px;">
+      <button id="dev-login-btn" class="secondary">enter arena as dev team</button>
+    </div>
+  </section>
+
+  <!-- Lobby Section -->
+  <section id="lobby" class="hidden">
+    <h1 id="team-greeting">welcome</h1>
+    <p id="round-info">Round status loading…</p>
+    <div style="margin: 12px 0;">
+      <button id="join-btn">reserve team seat</button>
+      <button id="launch-btn" class="action-btn">start now — fill with bots</button>
+      <button id="board-btn" class="secondary">leaderboard</button>
+    </div>
+    <div id="leaderboard" class="hidden" style="margin-top: 14px;"></div>
+  </section>
+
+  <!-- Match / Game Section -->
+  <section id="game" class="hidden">
+    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+      <h1>authoritative volley arena</h1>
+      <strong id="match-countdown" style="font-family: var(--pix); color: var(--o); font-size: 16px;"></strong>
+    </div>
+
+    <div class="canvas-wrap">
+      <canvas id="arena-cv" width="720" height="540"></canvas>
+    </div>
+
+    <ul id="players-list" class="grid"></ul>
+
+    <div id="coding-panel">
+      <h2>Program Your Cannon f(x)</h2>
+      <div class="presets">
+        <span>Presets:</span>
+        <button type="button" data-eq="0">straight: 0</button>
+        <button type="button" data-eq="-0.018*x^2 + 0.62*x">parabola</button>
+        <button type="button" data-eq="0.32*x + 1.5*sin(x/4)">sine wave</button>
+        <button type="button" data-eq="0.25*x - 2*cos(x/3)">cosine</button>
+      </div>
+      <textarea id="equation" spellcheck="false">0.32*x + 1.5*sin(x/4)</textarea>
+      <div id="syntax-status" style="font-size: 12px; margin: 4px 0 8px; min-height: 18px;"></div>
+      <button id="fire-btn" class="action-btn">lock cannon & fire when ready</button>
+    </div>
+
+    <div id="results-panel" class="hidden" style="margin-top: 18px;">
+      <h2>Round Summary</h2>
+      <div id="scoreboard"></div>
+      <button id="back-lobby-btn" style="margin-top: 12px;">return to lobby for next round</button>
+    </div>
+  </section>
+
+  <div id="status">ready.</div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const status = msg => { $('status').innerHTML = msg; };
+
+let myTeam = null;
+let currentRound = null;
+let currentMatchId = null;
+let matchState = null;
+let matchDeadline = 0;
+let lobbyInterval = null;
+let watchTimeout = null;
+let previewPoints = [];
+let animRaf = null;
+
+const fmt = ms => {
+  const s = Math.max(0, Math.ceil(ms / 1000));
+  return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+};
+
+setInterval(() => {
+  if (matchDeadline > 0) {
+    const rem = matchDeadline - Date.now();
+    $('clock').textContent = fmt(rem);
+    if ($('match-countdown')) $('match-countdown').textContent = fmt(rem);
+  } else {
+    $('clock').textContent = new Date().toLocaleTimeString();
+  }
+}, 250);
+
+async function api(path, options = {}) {
+  const res = await fetch(path, {
+    ...options,
+    headers: { 'content-type': 'application/json', ...(options.headers || {}) }
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || data.error || 'Request failed');
+  return data;
+}
+
+// Client-side quick evaluator for live aiming preview
+function evaluatePreview(src) {
+  try {
+    if (!src || !src.trim()) return [];
+    const clean = src.toLowerCase().replace(/π/g, 'pi').replace(/\*\*/g, '^').replace(/\s/g, '');
+    const tokens = clean.match(/sin|cos|tan|sqrt|abs|ln|log|exp|pi|\be\b|x|\d*\.?\d+|[()+\-*/^]/g);
+    if (!tokens || tokens.join('') !== clean) return null;
+
+    let i = 0;
+    const expr = () => {
+      let l = term();
+      while (tokens[i] === '+' || tokens[i] === '-') {
+        const op = tokens[i++]; const r = term();
+        const old = l; l = x => op === '+' ? old(x) + r(x) : old(x) - r(x);
+      }
+      return l;
+    };
+    const term = () => {
+      let l = power();
+      while (tokens[i] === '*' || tokens[i] === '/') {
+        const op = tokens[i++]; const r = power();
+        const old = l; l = x => op === '*' ? old(x) * r(x) : old(x) / r(x);
+      }
+      return l;
+    };
+    const power = () => {
+      let l = atom();
+      if (tokens[i] === '^') {
+        i++; const r = power();
+        const old = l; l = x => Math.pow(old(x), r(x));
+      }
+      return l;
+    };
+    const atom = () => {
+      if (i >= tokens.length) throw new Error('end');
+      const t = tokens[i++];
+      if (t === '+') return atom();
+      if (t === '-') { const f = atom(); return x => -f(x); }
+      if (t === '(') { const f = expr(); if (tokens[i++] !== ')') throw new Error('paren'); return f; }
+      if (t === 'x') return x => x;
+      if (t === 'pi') return () => Math.PI;
+      if (t === 'e') return () => Math.E;
+      if (t === 'sin') { if (tokens[i++] !== '(') throw new Error(); const a = expr(); tokens[i++]; return x => Math.sin(a(x)); }
+      if (t === 'cos') { if (tokens[i++] !== '(') throw new Error(); const a = expr(); tokens[i++]; return x => Math.cos(a(x)); }
+      if (t === 'tan') { if (tokens[i++] !== '(') throw new Error(); const a = expr(); tokens[i++]; return x => Math.tan(a(x)); }
+      if (t === 'sqrt') { if (tokens[i++] !== '(') throw new Error(); const a = expr(); tokens[i++]; return x => Math.sqrt(a(x)); }
+      if (t === 'abs') { if (tokens[i++] !== '(') throw new Error(); const a = expr(); tokens[i++]; return x => Math.abs(a(x)); }
+      const n = Number(t);
+      if (!Number.isNaN(n)) return () => n;
+      throw new Error('tok');
+    };
+
+    const fn = expr();
+    const base = fn(0);
+    const pts = [];
+    for (let x = 0; x <= 50; x += 0.4) {
+      const y = fn(x) - base;
+      if (Math.abs(y) > 40 || !Number.isFinite(y)) break;
+      pts.push([x, y]);
+    }
+    return pts;
+  } catch {
+    return null;
+  }
+}
+
+async function boot() {
+  try {
+    const me = await api('/api/me');
+    myTeam = me;
+    $('login').classList.add('hidden');
+    $('lobby').classList.remove('hidden');
+    $('team-greeting').textContent = `${me.teamName} (Rating: ${me.rating})`;
+
+    if (me.activeMatchId && me.matchState === 'coding') {
+      enterMatch(me.activeMatchId);
+      return;
+    }
+
+    startLobbyPolling();
+  } catch (e) {
+    status('Sign in with rCTF or use Dev Mode to enter the multiplayer arena.');
+    // Check if dev mode is enabled
+    try {
+      const r = await api('/api/rounds/current');
+      $('dev-auth-box').classList.remove('hidden');
+    } catch {}
+  }
+}
+
+function startLobbyPolling() {
+  if (lobbyInterval) clearInterval(lobbyInterval);
+  pollLobby();
+  lobbyInterval = setInterval(pollLobby, 1500);
+}
+
+async function pollLobby() {
+  try {
+    const me = await api('/api/me');
+    myTeam = me;
+
+    // Check if team has an active match in coding state
+    if (me.activeMatchId && me.matchState === 'coding') {
+      clearInterval(lobbyInterval);
+      enterMatch(me.activeMatchId);
+      return;
+    }
+
+    const r = await api('/api/rounds/current');
+    currentRound = r;
+    matchDeadline = new Date(r.entryClosesAt).getTime();
+    $('phase').textContent = `ROUND ${r.uid.slice(0, 8)} · ENTRY ${r.status.toUpperCase()}`;
+    const rem = Math.max(0, matchDeadline - Date.now());
+
+    let stateMsg = me.seatState === 'queued'
+      ? 'Seat reserved! Waiting for round to launch...'
+      : 'Entry open. Reserve seat to participate.';
+    $('round-info').textContent = `${stateMsg} Round entry closes in ${fmt(rem)}.`;
+
+    if (me.seatState === 'queued') {
+      $('join-btn').textContent = 'Seat Reserved ✔';
+      $('join-btn').disabled = true;
+    } else {
+      $('join-btn').textContent = 'Reserve Team Seat';
+      $('join-btn').disabled = false;
+    }
+  } catch (err) {
+    status(err.message);
+  }
+}
+
+function enterMatch(mid) {
+  currentMatchId = mid;
+  $('lobby').classList.add('hidden');
+  $('game').classList.remove('hidden');
+  $('results-panel').classList.add('hidden');
+  $('coding-panel').classList.remove('hidden');
+  $('fire-btn').disabled = false;
+  $('fire-btn').textContent = 'lock cannon & fire when ready';
+  watchMatch();
+}
+
+async function watchMatch() {
+  if (!currentMatchId) return;
+  try {
+    const m = await api(`/api/matches/${currentMatchId}`);
+    matchState = m.state;
+    matchDeadline = new Date(m.codingEndsAt).getTime();
+    $('phase').textContent = m.state === 'coding' ? 'CODING PHASE' : 'VOLLEY RESOLVED';
+
+    // Update player cards
+    $('players-list').innerHTML = m.players.map(p => `
+      <li class="${p.is_you ? 'you' : ''} ${p.is_bot ? 'bot' : ''}">
+        <strong>${p.team_name}</strong><br>
+        <small>${p.is_bot ? 'house bot' : 'team'} · ${p.rating}</small><br>
+        <span class="badge" style="background:${p.equation ? '#c8f7d0' : '#ffe9b8'}">
+          ${p.equation ? 'LOCKED' : 'AIMING'}
+        </span>
+      </li>
+    `).join('');
+
+    // Draw arena and player stations
+    renderArena(m);
+
+    if (m.state === 'finished' && m.result) {
+      matchDeadline = 0;
+      $('coding-panel').classList.add('hidden');
+      $('results-panel').classList.remove('hidden');
+      renderResults(m.result);
+      status('Simultaneous volley resolved.');
+      return;
+    }
+
+    watchTimeout = setTimeout(watchMatch, 800);
+  } catch (e) {
+    status(e.message);
+  }
+}
+
+function renderArena(m) {
+  const cv = $('arena-cv');
+  const ctx = cv.getContext('2d');
+  const w = cv.width, h = cv.height;
+  const cx = w / 2, cy = h / 2;
+  const scale = 12.5; // 18 * 12.5 = 225 px radius
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Background grid
+  ctx.strokeStyle = '#1e1e1e';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < w; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+  for (let y = 0; y < h; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+
+  // Circular arena ring (radius 18)
+  ctx.strokeStyle = '#444';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 18 * scale, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Center crosshair
+  ctx.strokeStyle = '#ff732d';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(cx - 10, cy); ctx.lineTo(cx + 10, cy);
+  ctx.moveTo(cx, cy - 10); ctx.lineTo(cx, cy + 10);
+  ctx.stroke();
+
+  // Draw cannons
+  const you = m.players.find(p => p.is_you);
+  m.players.forEach(p => {
+    const px = cx + p.x * scale;
+    const py = cy + p.y * scale;
+
+    // Cannon barrel pointing inward (angle)
+    ctx.strokeStyle = p.is_you ? '#ff732d' : p.is_bot ? '#666' : '#3b5bff';
+    ctx.lineWidth = p.is_you ? 5 : 3;
+    ctx.beginPath();
+    ctx.moveTo(px, py);
+    ctx.lineTo(px + Math.cos(p.angle) * 16, py + Math.sin(p.angle) * 16);
+    ctx.stroke();
+
+    // Cannon base
+    ctx.fillStyle = p.is_you ? '#ff732d' : p.is_bot ? '#555' : '#3b5bff';
+    ctx.beginPath();
+    ctx.arc(px, py, p.is_you ? 9 : 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Name tag
+    ctx.fillStyle = p.is_you ? '#ff732d' : '#eee';
+    ctx.font = (p.is_you ? 'bold 11px ' : '10px ') + 'Space Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(p.team_name, px, py - 12);
+  });
+
+  // If coding, draw live aiming trajectory preview for user
+  if (m.state === 'coding' && you && previewPoints && previewPoints.length > 1) {
+    ctx.strokeStyle = 'rgba(255, 115, 45, 0.85)';
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    const c = Math.cos(you.angle), s = Math.sin(you.angle);
+    previewPoints.forEach(([lx, ly], idx) => {
+      const rx = you.x + lx * c - ly * s;
+      const ry = you.y + lx * s + ly * c;
+      const sx = cx + rx * scale;
+      const sy = cy + ry * scale;
+      if (idx === 0) ctx.moveTo(sx, sy);
+      else ctx.lineTo(sx, sy);
+    });
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // If match finished, draw all resolved beams and deaths
+  if (m.state === 'finished' && m.result && m.result.beams) {
+    Object.entries(m.result.beams).forEach(([shooterId, pts]) => {
+      if (!pts || pts.length < 2) return;
+      const shooter = m.players.find(p => String(p.slot) === String(shooterId));
+      ctx.strokeStyle = shooter && shooter.is_you ? '#ff732d' : '#3b5bff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      pts.forEach(([bx, by], idx) => {
+        const sx = cx + bx * scale;
+        const sy = cy + by * scale;
+        if (idx === 0) ctx.moveTo(sx, sy);
+        else ctx.lineTo(sx, sy);
+      });
+      ctx.stroke();
+    });
+
+    // Draw death markers
+    if (m.result.deaths) {
+      m.result.deaths.forEach(d => {
+        const target = m.players.find(p => String(p.slot) === String(d.target));
+        if (target) {
+          const tx = cx + target.x * scale, ty = cy + target.y * scale;
+          ctx.strokeStyle = '#ff3333';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(tx - 8, ty - 8); ctx.lineTo(tx + 8, ty + 8);
+          ctx.moveTo(tx + 8, ty - 8); ctx.lineTo(tx - 8, ty + 8);
+          ctx.stroke();
+        }
+      });
+    }
+  }
+}
+
+function renderResults(res) {
+  const sorted = [...res.players].sort((a, b) => b.score - a.score);
+  $('scoreboard').innerHTML = `
+    <table class="scores-table">
+      <thead>
+        <tr><th>Rank</th><th>Team</th><th>Status</th><th>Kills</th><th>Score</th></tr>
+      </thead>
+      <tbody>
+        ${sorted.map((p, i) => `
+          <tr class="${myTeam && p.name === myTeam.teamName ? 'you' : ''}">
+            <td>#${i + 1}</td>
+            <td>${p.name} ${p.bot ? '<small>(bot)</small>' : ''}</td>
+            <td>${p.alive ? '★ ALIVE' : '† ELIMINATED'}</td>
+            <td>${p.kills}</td>
+            <td><strong>${p.score}</strong></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+// Equation input change listener for preview
+function updatePreview() {
+  const eq = $('equation').value;
+  previewPoints = evaluatePreview(eq);
+  if (previewPoints === null) {
+    $('syntax-status').innerHTML = '<span class="err-msg">⚠ Invalid equation syntax</span>';
+  } else {
+    $('syntax-status').innerHTML = '<span style="color:#2fa84f">✔ Equation syntax valid — trajectory plotted</span>';
+  }
+}
+$('equation').addEventListener('input', updatePreview);
+
+// Preset equation buttons
+document.querySelectorAll('.presets button').forEach(b => {
+  b.addEventListener('click', () => {
+    $('equation').value = b.dataset.eq;
+    updatePreview();
+  });
+});
+
+// Join round
+$('join-btn').onclick = async () => {
+  try {
+    await api('/api/rounds/current/join', { method: 'POST' });
+    status('Seat reserved in round!');
+    pollLobby();
+  } catch (e) {
+    status(e.message);
+  }
+};
+
+// Launch now with bots
+$('launch-btn').onclick = async () => {
+  try {
+    const res = await api('/api/rounds/current/launch-now', { method: 'POST' });
+    if (res.matches && res.matches[0]) {
+      enterMatch(res.matches[0]);
+    }
+  } catch (e) {
+    status(e.message);
+  }
+};
+
+// Fire equation
+$('fire-btn').onclick = async () => {
+  if (!currentMatchId) return;
+  try {
+    $('fire-btn').disabled = true;
+    $('fire-btn').textContent = 'Submitting...';
+    const res = await api(`/api/matches/${currentMatchId}/submit`, {
+      method: 'POST',
+      body: JSON.stringify({ equation: $('equation').value })
+    });
+    $('fire-btn').textContent = res.firesNow ? 'All cannons locked! Firing!' : 'Locked in! Waiting for opponents...';
+    status('Cannon locked.');
+  } catch (e) {
+    $('fire-btn').disabled = false;
+    $('fire-btn').textContent = 'lock cannon & fire when ready';
+    status(e.message);
+  }
+};
+
+// Leaderboard
+$('board-btn').onclick = async () => {
+  try {
+    const lb = await api('/api/leaderboard');
+    $('leaderboard').classList.toggle('hidden');
+    $('leaderboard').innerHTML = `
+      <table class="scores-table">
+        <thead><tr><th>Rank</th><th>Team</th><th>Rating</th></tr></thead>
+        <tbody>
+          ${lb.teams.map((t, i) => `<tr><td>#${i + 1}</td><td>${t.team_id}</td><td>${t.rating}</td></tr>`).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch (e) {
+    status(e.message);
+  }
+};
+
+// Return to lobby
+$('back-lobby-btn').onclick = () => {
+  currentMatchId = null;
+  matchDeadline = 0;
+  $('game').classList.add('hidden');
+  $('lobby').classList.remove('hidden');
+  startLobbyPolling();
+};
+
+// Dev login
+$('dev-login-btn').onclick = () => {
+  const name = $('dev-name').value.trim() || 'Player-1';
+  window.location.href = `/auth/dev/login?team=${encodeURIComponent(name)}`;
+};
+
+updatePreview();
+boot();
+</script>
+</body>
+</html>

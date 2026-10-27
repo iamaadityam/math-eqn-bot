@@ -1,0 +1,21 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+!.env.aws.example
+
+# Python generated files
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node dependencies
+node_modules/
+
+# Logs
+*.log
+
+# Local OS files
+.DS_Store
+Thumbs.db

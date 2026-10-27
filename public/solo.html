@@ -233,16 +233,6 @@
   </div>
 
   <div class="win" data-drag>
-    <div class="tbar"><span class="ttl">updates.log</span><span class="tb"><button class="min" title="collapse">_</button></span></div>
-    <div class="wbody"><ul class="log">
-      <li><span class="d new">10.26</span><span>new look. windows, boot screen, hit effects.</span></li>
-      <li><span class="d">10.25</span><span>shields, parry bots and assist fields are live.</span></li>
-      <li><span class="d">10.25</span><span>tutorial grew to 7 levels. go learn derivatives.</span></li>
-      <li><span class="d">10.24</span><span>first build: write f(x), hit the dot.</span></li>
-    </ul></div>
-  </div>
-
-  <div class="win" data-drag>
     <div class="tbar"><span class="ttl">key.txt</span><span class="tb"><button class="min" title="collapse">_</button></span></div>
     <div class="wbody"><div class="legendbox">
       <div><i style="background:#ff732d"></i>you</div>
@@ -556,9 +546,9 @@ function compile(src, allowed=new Set()){
 }
 const allowedFor = mode => new Set(mode==="normal"?[]:mode==="ode1"?["y"]:["y","dy"]);
 
-/* ---------- seeded RNG so a map can be reproduced from its seed ---------- */
-function rng(seed){
-  let a=seed>>>0;
+/* ---------- local-only random map source ---------- */
+function rng(){
+  let a=(Math.random()*2**32)>>>0;
   return ()=>{ a=(a+0x6D2B79F5)>>>0; let t=a; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296; };
 }
 
@@ -592,8 +582,8 @@ function genTerrain(r, R, s){
 const ZR={perimeter:2.8, parry:2.3, assist:2.3, PARRY_OFFSET:3.2};
 
 /* ---------- map generation ---------- */
-function genMatch(seed, s){
-  const r=rng(seed), R=(a,b)=>a+r()*(b-a);
+function genMatch(s){
+  const r=rng(), R=(a,b)=>a+r()*(b-a);
   const terrain=genTerrain(r,R,s);
   const soldiers=[], zones=[];
   const place=(team,kind,x0,x1)=>{
@@ -618,7 +608,7 @@ function genMatch(seed, s){
   for(let i=0;i<s.shields;i++) place("enemy","shield",-4,22);
   for(let i=0;i<s.allies;i++)  place("ally","ally",-22,18);
   for(let i=0;i<s.enemies;i++) place("enemy","normal",-6,23);
-  return {seed,mode:s.mode,terrain,soldiers,zones,shots:0,friendly:0,over:false};
+  return {mode:s.mode,terrain,soldiers,zones,shots:0,friendly:0,over:false};
 }
 
 /* ---------- shot simulation ---------- */
@@ -814,15 +804,15 @@ function readSettings(){
   return st;
 }
 let relX=false;
-function startPlay(newSeed=true){
-  if(newSeed||!startSettings){ startSettings={seed:(Math.random()*2**32)>>>0, ...readSettings()}; }
+function startPlay(newMatch=true){
+  if(newMatch||!startSettings){ startSettings=readSettings(); }
   relX=!!startSettings.relative; $("s-rel").value=relX?"rel":"abs";
-  loadMatch(genMatch(startSettings.seed,startSettings), "Play");
+  loadMatch(genMatch(startSettings), "Play");
   $("settings").classList.remove("hidden"); $("tut").classList.add("hidden");
 }
 function startTutorial(i){
   tutIdx=i; const L=TUTORIAL[i]; relX=false;
-  loadMatch({seed:0,shots:0,friendly:0,over:false,...JSON.parse(JSON.stringify(L.match))}, "Tutorial");
+  loadMatch({shots:0,friendly:0,over:false,...JSON.parse(JSON.stringify(L.match))}, "Tutorial");
   $("settings").classList.add("hidden"); $("tut").classList.remove("hidden");
   $("tut-title").textContent=L.title; $("tut-text").innerHTML=L.text;
   $("tut-hinttext").innerHTML=""; $("tut-next").disabled=true;
@@ -1012,7 +1002,7 @@ function finishShot(res){
 function setStatus(html,cls){ const s=$("status"); s.innerHTML=html; s.className="status "+(cls||""); }
 function updateStats(){
   const P=M.soldiers[0], left=M.soldiers.filter(s=>s.team==="enemy"&&s.alive).length;
-  $("stats").textContent="You ("+P.x+", "+P.y+") · Enemies left: "+left+" · Shots: "+M.shots+(M.seed?" · Seed "+M.seed:"");
+  $("stats").textContent="You ("+P.x+", "+P.y+") · Enemies left: "+left+" · Shots: "+M.shots;
 }
 function updateOffset(){
   const el=$("off");
