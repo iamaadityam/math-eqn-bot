@@ -1,0 +1,653 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#ff732d">
+<title>graphshot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --o:#ff732d; --ink:#141211; --paper:#f6f1e3; --paper2:#ebe4d0; --paper3:#ddd4ba;
+    --mut:#6d6657;
+    --mono:"Space Mono","IBM Plex Mono",Consolas,"Courier New",monospace;
+    --pix:"Silkscreen","Space Mono",Consolas,monospace;
+    --sh:4px 4px 0 var(--ink);
+  }
+  *{box-sizing:border-box}
+  html{background:var(--o)}
+  body{margin:0;min-height:100vh;padding:48px 16px 64px;color:var(--ink);font-family:var(--mono);font-size:14px;line-height:1.55;
+       background-color:var(--o);background-image:radial-gradient(rgba(20,18,17,.2) 1px,transparent 1.5px);background-size:7px 7px;
+       cursor:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='26' height='26'><path d='M3 2 L3 21 L8 16.5 L11.5 24 L15 22.4 L11.6 15 L18.5 14.6 Z' fill='%23141211' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/></svg>") 3 2,auto}
+  button,select,summary,label,input[type=number]{cursor:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28'><circle cx='14' cy='14' r='9' fill='none' stroke='%23141211' stroke-width='2.5'/><circle cx='14' cy='14' r='9' fill='none' stroke='%23fff' stroke-width='.8'/><circle cx='14' cy='14' r='2.6' fill='%23ff732d' stroke='%23141211' stroke-width='1'/></svg>") 14 14,pointer}
+  input[type=text]{cursor:text}
+  ::selection{background:var(--ink);color:var(--o)}
+  .hidden{display:none!important}
+  code{font-family:var(--mono);background:var(--paper3);padding:0 5px;border:1px solid var(--ink);font-size:.92em}
+  b{font-weight:700}
+
+  /* ---- chrome ---- */
+  .ticker{position:fixed;top:0;left:0;right:0;height:32px;background:var(--ink);color:var(--o);z-index:20;overflow:hidden;display:flex;align-items:center;border-bottom:2px solid var(--ink);font-family:var(--pix);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+  .ticker .track{display:flex;white-space:nowrap;animation:tick 54s linear infinite}
+  .ticker span{padding-right:3.5em}
+  .ticker i{font-style:normal;color:var(--paper);padding:0 1.2em 0 0}
+  @keyframes tick{to{transform:translateX(-50%)}}
+  #bgspin{position:fixed;left:50%;top:50%;width:min(110vmin,900px);height:min(110vmin,900px);margin:calc(min(110vmin,900px)/-2) 0 0 calc(min(110vmin,900px)/-2);
+          opacity:.16;pointer-events:none;z-index:0;animation:spin 80s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #task{position:fixed;left:0;right:0;bottom:0;height:40px;background:var(--paper);border-top:3px solid var(--ink);z-index:20;display:flex;align-items:center;gap:10px;padding:0 8px;font-family:var(--pix);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  #task .start{background:var(--o);border:2px solid var(--ink);box-shadow:2px 2px 0 var(--ink);font-family:var(--pix);font-size:12px;padding:4px 12px;text-transform:uppercase;color:var(--ink)}
+  #task .start:active{transform:translate(2px,2px);box-shadow:none}
+  #task .tl{flex:1;border:2px inset var(--paper3);background:var(--paper2);padding:3px 10px;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  #task .ck{border:2px inset var(--paper3);background:var(--paper2);padding:3px 10px;min-width:92px;text-align:center}
+  #task .usr{color:var(--mut)}
+  #task .netstat{color:var(--mut);font-size:10px}
+  #task .netstat[data-status="online"]{color:#127a38}
+  #task .netstat[data-status="connecting"],#task .netstat[data-status="reconnecting"]{color:#a05200}
+
+  /* ---- windows ---- */
+  .screen{position:relative;z-index:1;width:100%;max-width:980px;margin:0 auto}
+  .win{background:var(--paper);border:3px solid var(--ink);box-shadow:8px 8px 0 var(--ink)}
+  .win.pop{animation:pop .32s steps(6) both}
+  @keyframes pop{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+  .tbar{display:flex;align-items:center;gap:8px;background:var(--ink);color:var(--paper);padding:4px 6px 4px 10px;font-family:var(--pix);font-size:12px;letter-spacing:.08em;text-transform:uppercase;user-select:none}
+  .tbar .ttl{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tbar .ttl::before{content:"";display:inline-block;width:8px;height:8px;background:var(--o);margin-right:8px}
+  .tbar .tb{display:flex;gap:4px}
+  .tbar .tb button{width:20px;height:20px;line-height:14px;padding:0;background:var(--paper);color:var(--ink);border:2px solid var(--paper);font-family:var(--mono);font-weight:700;font-size:12px}
+  .tbar .tb button:hover{background:var(--o);border-color:var(--o)}
+  .wbody{padding:14px 16px 16px}
+  .win.collapsed .wbody{display:none}
+  .win.collapsed{box-shadow:5px 5px 0 var(--ink)}
+  [data-drag] .tbar{cursor:grab} [data-drag].dragging .tbar{cursor:grabbing}
+  [data-drag].dragging{box-shadow:12px 12px 0 var(--ink);z-index:6}
+
+  /* ---- home ---- */
+  #home{max-width:960px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:26px;align-items:start;padding-top:1.5vh}
+  #home .main{grid-row:span 2;position:relative}
+  .brand{font-family:var(--pix);font-size:clamp(34px,6vw,54px);line-height:1;letter-spacing:.02em;margin:2px 0 6px;text-transform:lowercase;font-weight:400}
+  .brand span{color:var(--o);-webkit-text-stroke:2px var(--ink);paint-order:stroke}
+  .hello{margin:0 0 14px;font-size:15px;color:var(--mut)}
+  .hello b{color:var(--ink);background:var(--o);padding:0 6px;border:2px solid var(--ink)}
+  .type{display:inline-block;overflow:hidden;white-space:nowrap;vertical-align:bottom;width:0;animation:typing .9s steps(4) .35s forwards}
+  @keyframes typing{to{width:4ch}}
+  .caret{display:inline-block;width:.55em;height:1.05em;background:var(--ink);vertical-align:-3px;margin-left:2px;animation:bl 1s steps(1) infinite}
+  @keyframes bl{50%{opacity:0}}
+  .navbig{display:grid;gap:10px;margin-top:6px}
+  .big{all:unset;box-sizing:border-box;display:grid;grid-template-columns:36px 1fr 28px;grid-template-rows:auto auto;column-gap:10px;align-items:center;
+       padding:10px 14px;background:var(--paper);border:3px solid var(--ink);box-shadow:var(--sh);cursor:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28'><circle cx='14' cy='14' r='9' fill='none' stroke='%23141211' stroke-width='2.5'/><circle cx='14' cy='14' r='9' fill='none' stroke='%23fff' stroke-width='.8'/><circle cx='14' cy='14' r='2.6' fill='%23ff732d' stroke='%23141211' stroke-width='1'/></svg>") 14 14,pointer;transition:transform .08s steps(2),box-shadow .08s steps(2),background .08s}
+  .big .n{grid-row:span 2;font-family:var(--pix);font-size:13px;color:var(--mut);border:2px solid var(--ink);width:34px;height:34px;display:grid;place-items:center;background:var(--paper2)}
+  .big .t{font-family:var(--pix);font-size:21px;text-transform:lowercase;line-height:1.1}
+  .big .s{font-size:12px;color:var(--mut);grid-column:2}
+  .big .ar{grid-row:span 2;grid-column:3;font-family:var(--pix);font-size:22px;transition:transform .15s steps(3)}
+  .big:hover,.big:focus-visible{background:var(--o);transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--ink)}
+  .big:hover .s,.big:focus-visible .s{color:var(--ink)} .big:hover .ar{transform:translateX(5px)}
+  .big:hover .n{background:var(--ink);color:var(--o)}
+  .big:active{transform:translate(4px,4px);box-shadow:0 0 0 var(--ink)}
+  .big.pri{background:var(--ink);color:var(--paper)} .big.pri .n{background:var(--o);color:var(--ink)} .big.pri .s{color:#b9b19c}
+  .big.pri:hover{background:var(--o);color:var(--ink)} .big.pri:hover .s{color:var(--ink)}
+  .sticker{position:absolute;right:-30px;bottom:-34px;width:96px;height:96px;z-index:3;pointer-events:none}
+  .sticker svg{width:100%;height:100%;animation:spin 14s linear infinite}
+  .sticker .core{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--pix);font-size:20px;color:var(--ink)}
+  .legendbox{display:grid;gap:6px;font-size:13px}
+  .legendbox div{display:flex;align-items:center;gap:8px}
+  .legendbox i{width:12px;height:12px;border:2px solid var(--ink);border-radius:50%;flex:none}
+  .legendbox i.sq{border-radius:0}
+  .botbox{font-size:12px;line-height:1.6}
+  .botbox .ln{display:block;margin-top:5px}
+  .botbox code{font-size:11px}
+  .botbox .tiny{color:var(--mut);font-size:11px}
+
+  /* ---- inner screens ---- */
+  .topbar{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+  .topbar .grow{flex:1;font-family:var(--pix);font-size:20px;font-weight:400;text-transform:lowercase;margin:0}
+  .topbar #stats{color:var(--mut);font-size:12px}
+  button{font-family:inherit;font-size:inherit;color:var(--ink)}
+  .back,.settings button,#tut button,.btn{background:var(--paper);border:2px solid var(--ink);box-shadow:2px 2px 0 var(--ink);padding:5px 12px;font-family:var(--pix);font-size:12px;letter-spacing:.05em;text-transform:lowercase}
+  .back:hover,.settings button:hover,#tut button:hover:not(:disabled),.btn:hover{background:var(--o)}
+  .back:active,.settings button:active,#tut button:active:not(:disabled),.btn:active{transform:translate(2px,2px);box-shadow:none}
+  .btn.pri{background:var(--ink);color:var(--o)} .btn.pri:hover{background:var(--o);color:var(--ink)}
+
+  .settings{display:flex;gap:10px 14px;flex-wrap:wrap;align-items:flex-end;background:var(--paper2);border:2px solid var(--ink);padding:10px 12px;margin-bottom:12px;font-family:var(--pix);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+  .settings label{display:flex;flex-direction:column;gap:3px}
+  .settings select,.settings input{background:var(--paper);color:var(--ink);border:2px solid var(--ink);padding:5px 6px;font-family:var(--mono);font-size:13px;width:100%;text-transform:none;letter-spacing:0;border-radius:0}
+  .settings select{appearance:none;padding-right:22px;background-image:linear-gradient(45deg,transparent 50%,var(--ink) 50%),linear-gradient(135deg,var(--ink) 50%,transparent 50%);background-position:calc(100% - 13px) 55%,calc(100% - 8px) 55%;background-size:5px 5px;background-repeat:no-repeat}
+  .settings input{width:58px}
+  .settings select:focus,.settings input:focus,.fx input:focus,.frow input:focus,.angle input:focus{outline:0;background:#fff4ea;box-shadow:0 0 0 3px var(--o)}
+
+  #tut{background:#fff4ea;border:2px dashed var(--ink);padding:10px 12px;margin-bottom:12px}
+  #tut #tut-title{font-family:var(--pix);font-size:14px;font-weight:400;background:var(--o);padding:1px 8px;border:2px solid var(--ink);display:inline-block;margin-bottom:6px}
+  #tut .row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center}
+  #tut button:disabled{opacity:.4;cursor:default;box-shadow:none}
+
+  .canvaswrap{position:relative;border:3px solid var(--ink);background:#fbf7ec;overflow:hidden}
+  canvas{width:100%;aspect-ratio:5/3;display:block;background:#fbf7ec}
+  canvas.shake{animation:shake .32s steps(8)}
+  @keyframes shake{20%{transform:translate(-4px,2px)}40%{transform:translate(4px,-3px)}60%{transform:translate(-3px,-2px)}80%{transform:translate(3px,3px)}}
+  .legend{display:flex;gap:6px 16px;justify-content:center;font-size:12px;margin-top:10px;flex-wrap:wrap;color:var(--mut)}
+  .legend i{display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:50%;border:2px solid var(--ink);vertical-align:-1px}
+
+  .bar{display:flex;gap:10px;align-items:stretch;margin:14px 0}
+  .fx{flex:1;display:flex;align-items:stretch;background:#fff;border:3px solid var(--ink);box-shadow:var(--sh);min-width:0}
+  .fx label{padding:10px 12px;background:var(--ink);color:var(--o);white-space:nowrap;font-family:var(--pix);font-size:13px;display:flex;align-items:center}
+  .fx input{flex:1;min-width:0;border:0;outline:0;background:transparent;padding:10px;font-size:19px;font-family:var(--mono);color:var(--ink);border-radius:0}
+  .fx input::placeholder{color:#b3ab98}
+  .fx .off{padding:0 10px;background:var(--paper2);border-left:2px solid var(--ink);color:var(--mut);display:flex;align-items:center;white-space:nowrap;font-size:13px}
+  .angle{display:flex;align-items:center;gap:6px;padding:0 8px;color:var(--mut);font-size:12px;white-space:nowrap;border-left:2px solid var(--ink)}
+  .angle input{width:56px;border:2px solid var(--ink);background:#fff;color:var(--ink);padding:3px 4px;font-size:13px;border-radius:0}
+  #fire{background:var(--o);color:var(--ink);border:3px solid var(--ink);box-shadow:var(--sh);font-family:var(--pix);font-size:20px;padding:0 24px;text-transform:lowercase;transition:transform .08s steps(2),box-shadow .08s steps(2)}
+  #fire:hover:not(:disabled){background:var(--ink);color:var(--o);transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--ink)}
+  #fire:active:not(:disabled){transform:translate(4px,4px);box-shadow:none}
+  #fire:disabled{background:var(--paper3);color:var(--mut);box-shadow:none;transform:translate(4px,4px)}
+
+  .fieldbox{background:var(--paper2);border:2px solid var(--ink);padding:10px 12px;margin:0 0 14px;font-size:12px}
+  .fieldhead{color:var(--mut);margin-bottom:8px}
+  .frow{display:flex;align-items:center;gap:8px;margin:5px 0}
+  .frow b{min-width:34px;font-family:var(--pix);font-weight:400;font-size:12px;background:#3fcf6b;border:2px solid var(--ink);text-align:center;padding:2px 0}
+  .frow input{flex:1;min-width:0;background:#fff;color:var(--ink);border:2px solid var(--ink);padding:6px 8px;font-size:14px;font-family:var(--mono);border-radius:0}
+  .frow.down{opacity:.4}
+
+  .pads{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+  .pad{display:grid;gap:5px;grid-template-columns:repeat(3,56px);padding:8px;border:2px solid var(--ink);background:var(--paper2)}
+  .pad button{background:var(--paper);border:2px solid var(--ink);box-shadow:2px 2px 0 var(--ink);height:38px;font-family:var(--mono);font-weight:700;font-size:15px}
+  .pad button:hover:not(:disabled){background:var(--o)}
+  .pad button:active:not(:disabled){transform:translate(2px,2px);box-shadow:none;background:var(--ink);color:var(--o)}
+  .pad button:disabled{opacity:.3;cursor:default;box-shadow:none}
+
+  .status{min-height:48px;margin-top:14px;font-size:14px;background:var(--ink);color:var(--paper);padding:10px 14px;border-left:8px solid var(--o)}
+  .status:empty::after{content:"ready.";color:#8c8574}
+  .status.ok{border-left-color:#3fcf6b} .status.err{border-left-color:#ff5a4d}
+  .status code{background:var(--o);color:var(--ink);user-select:all;border-color:var(--o)}
+
+  /* ---- ranked ---- */
+  .rankedbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--ink);color:var(--paper);border:2px solid var(--ink);padding:7px 12px;margin-bottom:10px}
+  .phasebadge{font-family:var(--pix);font-size:11px;text-transform:uppercase;letter-spacing:.08em;background:var(--o);color:var(--ink);padding:2px 9px;border:2px solid var(--paper)}
+  .phasebadge.live{background:#3fcf6b} .phasebadge.dead{background:#ff5a4d;color:#fff}
+  #ctimer{font-family:var(--pix);font-size:22px;color:var(--o);min-width:92px;letter-spacing:.05em}
+  #lobbylabel{font-size:11px;color:#b9b19c;margin-left:auto;text-align:right}
+  .roster{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-bottom:10px}
+  .pcard{border:2px solid var(--ink);background:#fff;padding:5px 7px;font-size:11px;line-height:1.35;position:relative;min-width:0}
+  .pcard .nm{display:flex;align-items:center;gap:5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pcard .nm span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pdot{width:9px;height:9px;border:2px solid var(--ink);border-radius:50%;flex:none}
+  .pcard .meta{color:var(--mut);font-size:10px;display:flex;justify-content:space-between;gap:4px}
+  .pcard.you{background:#fff4ea;box-shadow:2px 2px 0 var(--ink)}
+  .pcard.ready{background:#e8fbec}
+  .pcard.dead{opacity:.55;text-decoration:line-through}
+  .pcard.out{background:var(--paper2)}
+  .tag{font-family:var(--pix);font-size:8px;border:1px solid var(--ink);padding:0 3px;background:var(--paper2);flex:none}
+  .tag.bot{background:#d9d2ff} .tag.you{background:var(--o)}
+  .feed{display:flex;flex-wrap:wrap;gap:4px 14px;background:var(--paper2);border:2px solid var(--ink);padding:5px 9px;margin-bottom:10px;font-size:11px;min-height:28px;color:var(--mut)}
+  .feed .k{color:var(--ink);font-weight:700}
+  .feed .gone{text-decoration:line-through;opacity:.6}
+
+  /* ---- results ---- */
+  .results{position:fixed;inset:0;z-index:60;background:rgba(20,18,17,.72);display:grid;place-items:center;padding:20px}
+  .resultcard{width:min(760px,96vw);max-height:88vh;overflow:auto;background:var(--paper);border:3px solid var(--ink);box-shadow:10px 10px 0 var(--ink);padding:18px 20px}
+  .resultcard h2{font-family:var(--pix);font-weight:400;font-size:25px;margin:0 0 2px;text-transform:lowercase}
+  .resultcard .sub{color:var(--mut);font-size:12px;margin-bottom:12px}
+  .scoretable{border-collapse:collapse;width:100%;font-size:12px;margin:8px 0 14px}
+  .scoretable th,.scoretable td{border:1px solid var(--ink);padding:5px 7px;text-align:left}
+  .scoretable th{background:var(--ink);color:var(--paper);font-family:var(--pix);font-weight:400;font-size:10px;letter-spacing:.05em;text-transform:uppercase}
+  .scoretable tr.me td{background:#fff4ea;font-weight:700}
+  .scoretable .up{color:#127a38;font-weight:700} .scoretable .down{color:#c8321f;font-weight:700}
+  .resultacts{display:flex;gap:10px;flex-wrap:wrap}
+
+  /* ---- queue ---- */
+  .qwrap{display:grid;grid-template-columns:220px 1fr;gap:22px;align-items:center;padding:8px 4px 4px}
+  .qradar{position:relative;width:200px;height:200px;margin:0 auto;border:3px solid var(--ink);border-radius:50%;background:#fff4ea;overflow:hidden}
+  .qradar::before,.qradar::after{content:"";position:absolute;inset:14px;border:2px dashed #cfc5a8;border-radius:50%}
+  .qradar::after{inset:50px;border-style:solid}
+  .qradar .sweep{position:absolute;inset:0;background:conic-gradient(from 0deg,rgba(255,115,45,.55),rgba(255,115,45,0) 28%);animation:spin 1.6s linear infinite;border-radius:50%}
+  .qradar .blip{position:absolute;width:7px;height:7px;background:var(--ink);border-radius:50%;animation:blip 2.2s steps(1) infinite}
+  @keyframes blip{0%,70%{opacity:0}71%,100%{opacity:1}}
+  .qmain{min-width:0}
+  #qtimer{font-family:var(--pix);font-size:clamp(42px,8vw,66px);line-height:1;letter-spacing:.04em;display:block}
+  #qtext{font-family:var(--pix);font-size:15px;text-transform:lowercase;margin:8px 0 2px}
+  .qmeta{color:var(--mut);font-size:12px;margin-bottom:10px}
+  .qslots{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin:12px 0}
+  .qslot{border:2px solid var(--ink);background:#fff;padding:5px 6px;font-size:10px;min-height:38px;line-height:1.3;overflow:hidden}
+  .qslot.empty{background:repeating-linear-gradient(45deg,var(--paper2) 0 5px,#fff 5px 10px);color:var(--mut)}
+  .qslot .rn{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .qslot .rr{color:var(--mut);font-size:9px}
+  .qalgo{margin-top:14px;border-top:2px dashed var(--ink);padding-top:10px;font-size:11px;color:var(--mut)}
+  .qalgo b{color:var(--ink)}
+  .qacts{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+
+  /* ---- board ---- */
+  .boardtable{border-collapse:collapse;width:100%;font-size:12px}
+  .boardtable th,.boardtable td{border:1px solid var(--ink);padding:6px 8px;text-align:left}
+  .boardtable th{background:var(--ink);color:var(--paper);font-family:var(--pix);font-weight:400;font-size:10px;text-transform:uppercase;letter-spacing:.05em}
+  .boardtable tr.me td{background:#fff4ea;font-weight:700}
+  .boardtable .dot{display:inline-block;width:8px;height:8px;border:1px solid var(--ink);border-radius:50%;margin-right:6px;vertical-align:0}
+
+  /* ---- help ---- */
+  .card{line-height:1.65;font-size:14px}
+  .card h3{font-family:var(--pix);font-weight:400;font-size:15px;margin:24px 0 8px;display:inline-block;background:var(--o);border:2px solid var(--ink);padding:1px 10px;text-transform:lowercase}
+  .card h3:first-child{margin-top:0}
+  .card table{border-collapse:collapse;width:100%;margin:6px 0}
+  .card td,.card th{border:1px solid var(--ink);padding:7px 10px;text-align:left;vertical-align:top}
+  .card th{background:var(--ink);color:var(--paper);font-family:var(--pix);font-weight:400;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+  .card pre{background:var(--ink);color:#ffe2cf;border:2px solid var(--ink);padding:10px 12px;overflow:auto;font-size:12px;line-height:1.5;font-family:var(--mono)}
+  .card pre b{color:var(--o)}
+  .soon{text-align:center;padding:36px 10px}
+  .soon .bigico{font-family:var(--pix);font-size:44px}
+  .loadbar{height:18px;border:3px solid var(--ink);background:#fff;max-width:320px;margin:18px auto 0;position:relative;overflow:hidden}
+  .loadbar::after{content:"";position:absolute;top:0;bottom:0;width:30%;background:repeating-linear-gradient(90deg,var(--o) 0 8px,var(--ink) 8px 12px);animation:load 1.6s steps(12) infinite}
+  @keyframes load{from{left:-30%}to{left:100%}}
+
+  /* ---- boot ---- */
+  #boot{position:fixed;inset:0;z-index:100;background:var(--ink);color:var(--o);font-family:var(--pix);font-size:14px;padding:40px 7vw;letter-spacing:.06em;text-transform:uppercase;display:flex;flex-direction:column;gap:6px;transition:opacity .35s steps(5)}
+  #boot.out{opacity:0;pointer-events:none}
+  #boot .l{opacity:0} #boot .l.on{opacity:1}
+  #boot .l b{color:var(--paper);font-weight:400} #boot .sk{margin-top:auto;color:#6d6657;font-size:11px}
+
+  @media (max-width:760px){
+    body{padding:44px 10px 60px}
+    #home{grid-template-columns:1fr} #home .main{grid-row:auto}
+    .sticker{right:-8px;bottom:-28px;width:78px;height:78px}
+    .pad{grid-template-columns:repeat(3,48px)} #task .usr{display:none}
+    .win{box-shadow:5px 5px 0 var(--ink)} .wbody{padding:10px}
+    .roster{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .qwrap{grid-template-columns:1fr} .qradar{width:150px;height:150px}
+    .qslots{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .resultcard{padding:12px}
+  }
+  @media (prefers-reduced-motion:reduce){ *{animation:none!important;transition:none!important} .type{width:4ch} }
+</style>
+</head>
+<body>
+
+<div class="ticker" aria-hidden="true"><div class="track">
+  <span><i>///</i>ranked: hosted 10-player rooms. 2 minutes to code. everyone fires at once</span><span><i>///</i>skill queue: 30 seconds, real humans + bots fill every room</span><span><i>///</i>if you die, your beam dies with you</span><span><i>///</i>bot-ready: window.GraphShot + a headless WebSocket API</span>
+  <span><i>///</i>ranked: hosted 10-player rooms. 2 minutes to code. everyone fires at once</span><span><i>///</i>skill queue: 30 seconds, real humans + bots fill every room</span><span><i>///</i>if you die, your beam dies with you</span><span><i>///</i>bot-ready: window.GraphShot + a headless WebSocket API</span>
+</div></div>
+
+<svg id="bgspin" viewBox="-100 -100 200 200" aria-hidden="true" fill="none" stroke="#141211" stroke-width="1.2">
+  <circle r="96"/><circle r="78" stroke-dasharray="2 5"/><circle r="52"/>
+  <path d="M-96 0H96M0-96V96" stroke-width=".8"/><path d="M-67.9-67.9L67.9 67.9M67.9-67.9L-67.9 67.9" stroke-width=".5"/>
+  <path d="M-70 0 Q-35 -45 0 0 T70 0" stroke-width="2.4"/>
+  <circle cx="-70" cy="0" r="4" fill="#141211"/><circle cx="70" cy="0" r="4" fill="#141211"/>
+</svg>
+
+<div id="boot" aria-hidden="true">
+  <div class="l"><b>graphshot os</b> v1.0.0</div>
+  <div class="l">checking grid ......................... ok</div>
+  <div class="l">loading derivative shields ............ ok</div>
+  <div class="l">calibrating parry fields .............. ok</div>
+  <div class="l">arming equation parser (no eval) ...... ok</div>
+  <div class="l">waking matchmaker + bot bridge ........ ok</div>
+  <div class="l"><b>welcome, user.</b></div>
+  <div class="sk">press any key to skip</div>
+</div>
+
+<!-- ================= HOME ================= -->
+<div id="home" class="screen">
+  <div class="win main" data-drag>
+    <div class="tbar"><span class="ttl">welcome.txt</span><span class="tb"><button class="min" title="collapse">_</button></span></div>
+    <div class="wbody">
+      <div class="sticker" aria-hidden="true">
+        <svg viewBox="0 0 100 100"><defs><path id="cp" d="M50 50 m-38 0 a38 38 0 1 1 76 0 a38 38 0 1 1 -76 0"/></defs>
+          <circle cx="50" cy="50" r="48" fill="#ff732d" stroke="#141211" stroke-width="3"/>
+          <text font-family="Silkscreen,monospace" font-size="9.4" fill="#141211" letter-spacing="1.2"><textPath href="#cp">MATH ARTILLERY CLUB * GRAPHSHOT * </textPath></text></svg>
+        <div class="core">f&prime;</div>
+      </div>
+      <h1 class="brand">graph<span>shot</span></h1>
+      <p class="hello">welcome, <b><span class="type">user</span></b><span class="caret"></span></p>
+      <div class="navbig">
+        <button class="big pri" data-go="play" id="nav-play"><span class="n">01</span><span class="t">ranked</span><span class="ar">&rarr;</span><span class="s">10 soldiers. 30s queue. everyone fires at once.</span></button>
+        <button class="big" data-go="practice" id="nav-practice"><span class="n">02</span><span class="t">practice</span><span class="ar">&rarr;</span><span class="s">solo sandbox. every map option unlocked.</span></button>
+        <button class="big" data-go="board"><span class="n">03</span><span class="t">leaderboards</span><span class="ar">&rarr;</span><span class="s">skill rating, kills, wins.</span></button>
+        <button class="big" data-go="tutorial"><span class="n">04</span><span class="t">tutorial</span><span class="ar">&rarr;</span><span class="s">7 short levels.</span></button>
+        <button class="big" data-go="help"><span class="n">05</span><span class="t">help + bot api</span><span class="ar">&rarr;</span><span class="s">equations, ranked rules, bot hooks.</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="win" data-drag>
+    <div class="tbar"><span class="ttl">key.txt</span><span class="tb"><button class="min" title="collapse">_</button></span></div>
+    <div class="wbody"><div class="legendbox">
+      <div><i style="background:#ff732d"></i>you</div>
+      <div><i style="background:#3b5bff"></i>enemy</div>
+      <div><i style="background:#3fcf6b"></i>ally, with an assist field</div>
+      <div><i style="background:#ff4b3a"></i>shield: curve becomes its derivative</div>
+      <div><i style="background:#9a6bff"></i>parry bot: bends your shot back</div>
+      <div><i class="sq" style="background:#141211"></i>obstacle</div>
+    </div></div>
+  </div>
+
+  <div class="win" data-drag>
+    <div class="tbar"><span class="ttl">bots.txt</span><span class="tb"><button class="min" title="collapse">_</button></span></div>
+    <div class="wbody botbox">
+      <b>bot-ready.</b> every action is a normal DOM event plus a stable JS bridge.
+      <span class="ln"><code>GraphShot.findMatch()</code> joins the hosted queue.</span>
+      <span class="ln"><code>GraphShot.planShot()</code> returns a valid aim.</span>
+      <span class="ln"><code>GraphShot.submitShot({expression, lock:true})</code> commits it.</span>
+      <span class="ln tiny">full reference in <b>help + bot api</b> · headless example: <code>bot.example.js</code></span>
+    </div>
+  </div>
+</div>
+
+<!-- ================= QUEUE ================= -->
+<div id="queue" class="screen win hidden">
+  <div class="tbar"><span class="ttl">matchmaker.exe</span><span class="tb"><button class="min" title="collapse">_</button><button data-go="home" title="close">&times;</button></span></div>
+  <div class="wbody">
+    <div class="topbar">
+      <button class="back" data-go="home">&larr; menu</button>
+      <h1 class="grow">finding a lobby</h1>
+      <span id="qrating" class="muted"></span>
+    </div>
+    <div class="qwrap">
+      <div class="qradar" aria-hidden="true">
+        <div class="sweep"></div>
+        <div class="blip" style="left:34%;top:28%"></div>
+        <div class="blip" style="left:66%;top:50%;animation-delay:.7s"></div>
+        <div class="blip" style="left:44%;top:70%;animation-delay:1.2s"></div>
+        <div class="blip" style="left:58%;top:20%;animation-delay:1.7s"></div>
+      </div>
+      <div class="qmain">
+        <span id="qtimer">0:30</span>
+        <div id="qtext">scanning the ladder…</div>
+        <div class="qmeta" id="qmeta">10 players per lobby · empty seats become skill-matched bots</div>
+        <div class="qslots" id="qslots"></div>
+        <div class="qacts">
+          <button id="qcancel" class="btn">cancel queue</button>
+          <span style="align-self:center;font-size:11px;color:var(--mut)" id="qcount"></span>
+        </div>
+      </div>
+    </div>
+    <div class="qalgo">
+      <b>hosted rooms · rating snake.</b> every 30s the match server sorts the whole queue by skill rating, deals
+      everyone into rooms in a snake draft, then tops each room up with bots so it always holds exactly 10.
+      60 queued humans = 6 rooms of 10. 3 humans = those 3 + 7 bots. Everybody in a room gets the same map,
+      the same clock and the same simultaneous shot resolution.
+    </div>
+  </div>
+</div>
+
+<!-- ================= GAME (ranked + practice) ================= -->
+<div id="game" class="screen win hidden">
+  <div class="tbar"><span class="ttl" id="gwin">ranked.exe</span><span class="tb"><button class="min" title="collapse">_</button><button data-go="home" title="close">&times;</button></span></div>
+  <div class="wbody">
+  <div class="topbar">
+    <button class="back" data-go="home">&larr; menu</button>
+    <h1 id="gtitle" class="grow">ranked</h1>
+    <span id="stats"></span>
+  </div>
+
+  <div id="rankedhud" class="hidden">
+    <div class="rankedbar">
+      <span class="phasebadge" id="phasebadge">code</span>
+      <span id="ctimer">2:00</span>
+      <span id="feed" class="feed" style="display:flex;flex:1;margin:0"></span>
+      <span id="lobbylabel">lobby</span>
+    </div>
+    <div class="roster" id="roster"></div>
+  </div>
+
+  <div id="settings" class="settings">
+    <label>function type
+      <select id="s-mode">
+        <option value="normal">f(x)</option>
+        <option value="ode1">y' = f(x, y)</option>
+        <option value="ode2">y'' = f(x, y, y')</option>
+      </select>
+    </label>
+    <label title="What x means inside your equation">x is measured from
+      <select id="s-rel"><option value="abs">map origin (graphwar)</option><option value="rel">the player</option></select>
+    </label>
+    <label>enemies <input id="s-en" type="number" min="0" max="8" value="2"></label>
+    <label title="Enemies inside a derivative perimeter">shields <input id="s-sh" type="number" min="0" max="4" value="1"></label>
+    <label title="Parry bots: enemies with a field that bends your shot back at you">parry bots <input id="s-bt" type="number" min="0" max="3" value="1"></label>
+    <label title="Each ally deploys one assist field. You write its equation.">allies <input id="s-al" type="number" min="0" max="12" value="2"></label>
+    <label>obstacles <input id="s-ob" type="number" min="0" max="14" value="5"></label>
+    <button id="b-new">new map</button>
+    <button id="b-retry">retry map</button>
+  </div>
+
+  <div id="tut" class="hidden">
+    <b id="tut-title"></b>
+    <div id="tut-text"></div>
+    <div class="row">
+      <button id="tut-hint">hint</button>
+      <span id="tut-hinttext"></span>
+      <span style="flex:1"></span>
+      <button id="tut-next" disabled>next &rarr;</button>
+    </div>
+  </div>
+
+  <div class="canvaswrap"><canvas id="cv" width="1000" height="600"></canvas></div>
+
+  <div class="legend" id="practicelegend">
+    <span><i style="background:#ff732d"></i>you</span>
+    <span><i style="background:#3b5bff"></i>enemy</span>
+    <span><i style="background:#3fcf6b"></i>ally + assist field</span>
+    <span><i style="background:#ff4b3a"></i>shield (derivative)</span>
+    <span><i style="background:#9a6bff"></i>parry bot field</span>
+    <span><i style="background:#141211;border-radius:0"></i>obstacle</span>
+  </div>
+  <div class="legend hidden" id="rankedlegend">
+    <span>10-player free-for-all</span><span>·</span><span>every cannon fires at the same instant</span><span>·</span>
+    <span>shoot toward the facing arrow</span><span>·</span><span>dead shooters lose their beam</span>
+  </div>
+
+  <div class="bar">
+    <div class="fx">
+      <label id="flabel">f(x) =</label>
+      <input id="expr" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="none" placeholder="0.3*x   or   sin(x)*5">
+      <span class="angle hidden" id="angwrap">angle&deg; <input id="angle" type="number" value="0" min="-85" max="85"></span>
+      <span class="off" id="off">+ 0.000</span>
+    </div>
+    <button id="fire">fire!</button>
+  </div>
+
+  <div id="fields" class="fieldbox hidden">
+    <div class="fieldhead">assist fields: one equation per ally. inside a field <code>x</code> = distance travelled in it, <code>y</code> = heading angle (rad, 0 = right, + = up). the result is how fast the shot turns (+ = left/up, &minus; = right/down). empty = no steering.</div>
+    <div id="fieldrows"></div>
+  </div>
+
+  <div class="pads">
+    <div class="pad">
+      <button data-k="clear">C</button><button data-i="pi">π</button><button data-i="e">e</button>
+      <button data-i="1">1</button><button data-i="2">2</button><button data-i="3">3</button>
+      <button data-i="4">4</button><button data-i="5">5</button><button data-i="6">6</button>
+      <button data-i="7">7</button><button data-i="8">8</button><button data-i="9">9</button>
+      <button data-i="(">(</button><button data-i="0">0</button><button data-i=".">.</button>
+      <button data-k="left">←</button><button data-k="right">→</button><button data-k="back">⌫</button>
+    </div>
+    <div class="pad">
+      <button data-i="abs(">abs</button><button data-i="ln(">ln</button><button data-i="sqrt(">√</button>
+      <button data-i="sin(">sin</button><button data-i="cos(">cos</button><button data-i="tan(">tan</button>
+      <button data-i="*">*</button><button data-i="/">/</button><button data-i="exp(">exp</button>
+      <button data-i="+">+</button><button data-i="-">-</button><button data-i="^">^</button>
+      <button data-i="x">x</button><button data-i="y" data-needs="y">y</button><button data-i="y'" data-needs="dy">y'</button>
+      <button data-i="log(">log</button><button data-i="(">(</button><button data-i=")">)</button>
+    </div>
+  </div>
+
+  <div class="status" id="status"></div>
+  </div>
+</div>
+
+<!-- ================= RESULTS ================= -->
+<div id="results" class="results hidden" role="dialog" aria-modal="true" aria-labelledby="resulttitle">
+  <div class="resultcard">
+    <h2 id="resulttitle">lobby complete</h2>
+    <div class="sub" id="resultsub"></div>
+    <div id="resultbody"></div>
+    <div class="resultacts">
+      <button class="btn pri" id="b-again">play again</button>
+      <button class="btn" id="b-results-board">leaderboard</button>
+      <button class="btn" id="b-results-home">menu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= HELP ================= -->
+<div id="help" class="screen win hidden">
+  <div class="tbar"><span class="ttl">help.txt</span><span class="tb"><button class="min" title="collapse">_</button><button data-go="home" title="close">&times;</button></span></div>
+  <div class="wbody">
+  <div class="topbar"><button class="back" data-go="home">&larr; menu</button><h1 class="grow">how it works</h1></div>
+  <div class="card">
+    <h3 style="margin-top:0">Ranked: hosted 10-player free-for-all</h3>
+    Press <b>Ranked</b>. Your browser joins the <b>match server</b>, which gives the whole queue a <b>30 second</b>
+    window and then forms rooms of exactly <b>10 soldiers</b>. Every real human in that window is dealt into the same
+    set of rooms; any empty seat is filled by a server bot whose rating is close to the room average. 60 queued humans
+    become 6 rooms of 10; 3 real humans become one room of 3 + 7 bots. The room is authoritative: one server owns the
+    map, the clock, the locked equations, the beams and the scores.<br><br>
+    Rooms are dealt with a <b>rating snake draft</b>: sort everyone by skill, deal in serpentine order, so room
+    averages stay close. It is the same algorithm regardless of queue size.<br><br>
+    During the <b>2 minute code phase</b> everyone writes an equation. Lock in early and the room starts as soon as the
+    last player (or bot) is ready; otherwise the server locks every remaining cannon at 0:00.<br><br>
+    <b>Every cannon fires at the same instant.</b> The beams then travel in real time. If a player is killed, their beam
+    is invalid from that instant: any part of their curve that has not arrived yet disappears. A straight line that
+    reaches a sine-wave shooter before their wave reaches you kills the wave too. Score is not zero-sum: kills, survival
+    time and placement all pay.
+
+    <h3>Ranked rules + scoring</h3>
+    <table>
+      <tr><th>Thing</th><th>Value</th></tr>
+      <tr><td>Lobby size</td><td>Exactly 10, always. Bots top up empty seats.</td></tr>
+      <tr><td>Queue window</td><td>30 seconds, skill-based snake draft.</td></tr>
+      <tr><td>Code window</td><td>Up to 2 minutes. All-ready starts early; timeout auto-locks.</td></tr>
+      <tr><td>Beam speed</td><td>24 map units / second. Everybody launches at t = 0.</td></tr>
+      <tr><td>Kill</td><td>+100 points, credited to whoever's beam arrives.</td></tr>
+      <tr><td>Survival</td><td>+3 points per second alive.</td></tr>
+      <tr><td>Placement bonus</td><td>1st +300, 2nd +220, 3rd +160, then 110 / 70 / 40 / 25 / 15 / 10 / 5.</td></tr>
+      <tr><td>Minimum payout</td><td>Every loser still keeps kill points, survival points and a placement bonus.</td></tr>
+      <tr><td>Rating</td><td>Elo vs. the rest of the lobby. Everyone starts at 1000.</td></tr>
+    </table>
+    In ranked, <code>x</code> is always the distance in front of your cannon and each cannon fires toward the centre.
+    The left side faces right, the right side faces left. Enemies behind your facing direction cannot be hit directly.
+
+    <h3>Bot API (browser)</h3>
+    Every UI action also exists on <code>window.GraphShot</code>. A browser bot can use these methods, or the same
+    stable DOM ids/events. State is broadcast as <code>window</code> events named <code>graphshot:state</code> and
+    <code>graphshot:phase</code>.
+    <pre><b>await GraphShot.findMatch()</b>            // join the hosted queue; resolves when the code phase starts
+<b>GraphShot.getState()</b>                 // JSON-safe snapshot (phase, connected, match, queue, result)
+<b>GraphShot.getMap()</b>                   // soldiers, terrain, your local frame
+<b>GraphShot.getConnection()</b>            // server url, status, latency
+<b>GraphShot.setName("my-bot")</b>
+<b>GraphShot.planShot()</b>                 // { expression, angle, targetSlot } best candidate
+<b>GraphShot.submitShot({expression:"0.3*x"})</b>
+<b>GraphShot.submitShot({expression:"0.3*x", lock:true})</b>
+<b>GraphShot.lockIn()</b>                   // ready now
+<b>await GraphShot.waitForPhase("result", 180000)</b>
+<b>GraphShot.on("state", fn)</b>            // returns unsubscribe; also "phase" and "error"
+<b>GraphShot.getLeaderboard()</b>
+<b>GraphShot.getOptions(), setOptions({...})</b>  // practice options
+<b>GraphShot.navigate("home")</b>
+GraphShot.version</pre>
+    The DOM is bot-friendly too: <code>#expr</code>, <code>#fire</code>, <code>#s-mode</code>, <code>#s-rel</code>,
+    <code>#s-en</code>, <code>#s-sh</code>, <code>#s-bt</code>, <code>#s-al</code>, <code>#s-ob</code>,
+    <code>#b-new</code>, <code>#b-retry</code>, <code>#nav-play</code>, <code>#qcancel</code>. Inputs fire normal
+    <code>input</code>/<code>change</code> events.<br><br>
+    <b>Headless bots:</b> connect to the same server over <code>ws(s)://your-host/ws</code> and speak JSON:
+    <code>hello</code> → <code>queue</code> → wait for a <code>state</code> with phase <code>code</code> →
+    <code>submit</code> (optionally <code>lock:true</code>). Full protocol in <code>BOT_API.md</code>; a complete
+    runnable client is <code>bot.example.js</code>.<br><br>
+    <b>Fast local testing:</b> start the server with <code>FAST=1 npm start</code> for a 3s queue and 10s code
+    window. <code>GraphShot.setClock()</code> only works when the server runs with <code>ALLOW_CLOCK=1</code>.
+
+    <h3>The goal (practice + tutorial)</h3>
+    Your soldier (orange) stands somewhere on the map. Type an equation; when you press <b>Fire!</b> the graph of that equation is drawn
+    starting <i>at your soldier</i>, travelling to the right. Every enemy (blue) the curve touches is killed. Kill all enemies to win.
+
+    <h3>The map</h3>
+    A normal Cartesian plane: <code>x</code> from −25 to 25 (left → right), <code>y</code> from −15 to 15 (bottom → top). The thick lines are the axes
+    and each small square is 1 unit. Dark blobs are <b>obstacles</b>: if your curve touches one the shot ends there and blows a hole in it.
+    Green soldiers are your <b>allies</b> — your shots kill them too.
+
+    <h3>How your equation becomes a shot</h3>
+    The curve is always <b>shifted up or down so that it passes through your soldier</b>. That shift is the number shown at the right of the input (e.g. <code>+ 6.137</code>).
+    So only the <i>shape</i> of your function matters — not where it would normally cross the axes.<br><br>
+    Important: <code>x</code> is the real x‑coordinate on the map, <u>not</u> the distance from you. If you stand at x = −20, then <code>x^2</code> already
+    has a steep slope at your feet. To get shapes centred on yourself, use <code>(x+20)</code> (if you stand at −20) instead of <code>x</code>.
+    In ranked, <code>x</code> is always measured from your cannon, so <code>0.3*x</code> is a straight line no matter which side you spawn on.
+
+    <h3>Syntax</h3>
+    <table>
+      <tr><th>Type</th><th>What you can write</th></tr>
+      <tr><td>Operators</td><td><code>+ − * / ^</code> and <code>( )</code>. Power also works as <code>**</code>. <code>2^3^2</code> = 2^(3^2).</td></tr>
+      <tr><td>Functions</td><td><code>abs ln log sqrt sin cos tan exp</code> — always with brackets: <code>sin(x)</code>. <code>ln</code> is natural log, <code>log</code> is base 10.</td></tr>
+      <tr><td>Constants</td><td><code>pi</code> (or π), <code>e</code></td></tr>
+      <tr><td>Variables</td><td><code>x</code> always. <code>y</code> and <code>y'</code> only in the differential‑equation modes.</td></tr>
+      <tr><td>Shortcuts</td><td>Implicit multiplication: <code>2x</code>, <code>3(x+1)</code>, <code>sin(x)cos(x)</code>. Trig works in <b>radians</b>.</td></tr>
+    </table>
+
+    <h3>Handy shapes</h3>
+    <table>
+      <tr><th>Equation</th><th>What it does</th></tr>
+      <tr><td><code>0</code></td><td>Perfectly flat shot.</td></tr>
+      <tr><td><code>0.3*x</code></td><td>Straight line with slope 0.3 (up 3 for every 10 to the right).</td></tr>
+      <tr><td><code>(ty−py)/(tx−px)*x</code></td><td>Straight line through you at (px, py) and a target at (tx, ty): just compute the slope.</td></tr>
+      <tr><td><code>-0.0255*(x+20)*(x-8)</code></td><td>An arch: zero at x = −20 and x = 8, peak between. Great for hopping over obstacles.</td></tr>
+      <tr><td><code>3*sin(x/2)</code></td><td>A wave — passes through several enemies in a row.</td></tr>
+      <tr><td><code>5*sin(x)/x</code>‑style</td><td>Shapes that decay; careful, <code>x</code> = 0 is undefined.</td></tr>
+    </table>
+    <b>Tip:</b> to make a curve hit several points, add terms that vanish at the points you already have, e.g. <code>(x−a)(x−b)</code> is 0 at both a and b.
+
+    <h3>Special zones (practice)</h3>
+    <table>
+      <tr><td><span style="color:#c8321f"><b>Shield</b></span><br>red dashed circle</td>
+          <td>Around a shielded enemy. The first time your curve touches it, your curve is <b>replaced by its derivative</b> f′(x) — the slope function of what you typed —
+          lifted so it continues from the contact point (no jump). A parabola becomes a line, a sine becomes a cosine, a straight line becomes flat. Works in every mode
+          (in the differential modes the "curve" is the integrated path). Each shield triggers once per shot; the shield disappears when its enemy dies.</td></tr>
+      <tr><td><span style="color:#6a2fd6"><b>Parry bot</b></span><br>purple circle</td>
+          <td>A bot that doesn't attack — it defends. Its parry field sits in front of it. Anything that enters is <b>bent back toward you</b>, and your own shot can kill you or your allies.
+          Go around the field (over or under) to reach the bot behind it. Kill the bot and the field vanishes.</td></tr>
+      <tr><td><span style="color:#127a38"><b>Assist field</b></span><br>green dashed circle</td>
+          <td>Every ally deploys one (there's no limit on how many allies you can have). If your shot enters it, the shot is <b>caught</b> and steered by <i>the equation you type in that ally's field box</i>:
+          inside the field <code>x</code> = distance travelled in it, <code>y</code> = heading angle in radians (0 = right, + = up), and the value you give is the <b>turn rate</b> (+ turns left/up, − right/down).
+          <code>0.7</code> = steady left curl, <code>sin(x*3)</code> = wiggle, <code>2*(1.57−y)</code> = swing toward straight up. After the shot leaves a field it flies <b>straight</b> along its exit heading,
+          so it can be caught by another field — chain fields to bounce one shot through many enemies. Each field catches a shot once. Empty equation = no steering.</td></tr>
+    </table>
+    A caught shot is no longer a function of x: it can go backwards or down. A shot redirected by any field <u>can</u> hit you.
+
+    <h3>What ends a practice shot</h3>
+    <ul>
+      <li>The curve leaves the map.</li>
+      <li>It touches an obstacle (the obstacle gets a crater).</li>
+      <li>The function becomes undefined — e.g. <code>ln(−1)</code>, <code>1/0</code> or <code>sqrt</code> of a negative.</li>
+    </ul>
+    Soldiers do <u>not</u> stop a shot — it carries on and can kill several in one go (allies included). If a field sends your shot back into <b>you</b>, you lose that round.
+
+    <h3>Function types</h3>
+    <table>
+      <tr><td><b>f(x)</b></td><td>The default. The graph of <code>y = f(x)</code>, shifted to start at you.</td></tr>
+      <tr><td><b>y' = f(x, y)</b></td><td>You give the <i>slope</i> of the path at every point; the game integrates it from your position. <code>y' = 0.1</code> is a line with slope 0.1; <code>y' = -y/10</code> bends the path back toward the x‑axis. You can use <code>x</code> and <code>y</code> (the height of the path right now).</td></tr>
+      <tr><td><b>y'' = f(x, y, y')</b></td><td>You give the <i>curvature</i>. You also set a starting <b>angle</b> (degrees, 0 = flat, positive = up). <code>y'' = -0.05</code> with angle 30° fires a parabolic arc. You can use <code>x</code>, <code>y</code> and <code>y'</code>.</td></tr>
+    </table>
+
+    <h3>Error messages</h3>
+    <table>
+      <tr><td><code>Use parentheses</code></td><td>Write <code>sin(x)</code>, not <code>sin x</code>.</td></tr>
+      <tr><td><code>Missing ')'</code></td><td>Brackets don't match.</td></tr>
+      <tr><td><code>undefined at the player's x</code></td><td>Your function breaks exactly where you stand (e.g. <code>1/(x+20)</code> while standing at −20).</td></tr>
+      <tr><td><code>can't be used in this mode</code></td><td>You used <code>y</code> or <code>y'</code> in f(x) mode.</td></tr>
+    </table>
+  </div>
+  </div>
+</div>
+
+<!-- ================= LEADERBOARD ================= -->
+<div id="board" class="screen win hidden">
+  <div class="tbar"><span class="ttl">leaderboards.dat</span><span class="tb"><button class="min" title="collapse">_</button><button data-go="home" title="close">&times;</button></span></div>
+  <div class="wbody">
+  <div class="topbar"><button class="back" data-go="home">&larr; menu</button><h1 class="grow">leaderboards</h1><button id="b-refresh-board" class="btn" style="font-size:9px">refresh</button></div>
+  <div id="boardbody"></div>
+  </div>
+</div>
+
+<div id="task"><button class="start" data-go="home">start</button><span class="tl" id="tasklabel">desktop</span><span class="usr" id="taskuser">user@graphshot</span><span class="netstat" id="netstat" data-status="offline">○ offline</span><span class="ck" id="clock"></span></div>
+
+<script src="js/core.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/bots.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/net.js"></script>
+<script src="js/ranked.js"></script>
+</body>
+</html>
