@@ -275,11 +275,10 @@ function simulate(f0, M, o={}){
       prev=lv.slice(); lv[0]=nb;
       for(let k=1;k<=MAXL;k++) lv[k]=(lv[k-1]-prev[k-1])/h;
       by=nb; ny=lv[L]+shift;
-      // Curves may leave the top/bottom of the map and come back later
-      // (parabolas, high-degree polynomials). Keep tracing them so the
-      // returning arc can still hit a target; only the x edge ends the shot.
+      // Keep tracing the curve even when it leaves the top/bottom of the map
+      // (parabolas, high-degree polynomials) so the returning arc can still hit
+      // a target. Only a non-finite value or the x edge ends the shot.
       if(!isFinite(ny)||nx>B.xmax){ leave(x,y,nx,ny); break; }
-      if(ny<B.ymin-200||ny>B.ymax+200){ exit={why:"far",x:nx}; break; }
       hitTest(x,y,nx,ny);
       pts.push([nx,ny]);
       if(solidAt(M.terrain,nx,ny)){ impact=[nx,ny]; break; }

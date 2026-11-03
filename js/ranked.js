@@ -722,6 +722,14 @@ function drawRanked() {
     ctx.strokeText(label, px, py - 15);
     ctx.fillStyle = deadNow ? "#8c8574" : "#141211";
     ctx.fillText(label, px, py - 15);
+    if (s.slot === r.mySlot) {
+      const glow = document.getElementById("pointerglow");
+      const rect = cv.getBoundingClientRect();
+      if (glow) {
+        glow.style.transform = `translate(${rect.left + px}px,${rect.top + py}px)`;
+        glow.classList.add("on");
+      }
+    }
   });
   if (r.phase === "combat") collectFeed(t);
 }
