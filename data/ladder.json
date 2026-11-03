@@ -1,0 +1,362 @@
+{
+  "bots": [
+    {
+      "id": "bot-euler",
+      "name": "euler",
+      "rating": 760,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": true
+    },
+    {
+      "id": "bot-gauss",
+      "name": "gauss",
+      "rating": 786,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": true
+    },
+    {
+      "id": "bot-newton",
+      "name": "newton",
+      "rating": 812,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": true
+    },
+    {
+      "id": "bot-noether",
+      "name": "noether",
+      "rating": 843,
+      "matches": 1,
+      "wins": 0,
+      "kills": 0,
+      "points": 742,
+      "isBot": true
+    },
+    {
+      "id": "bot-riemann",
+      "name": "riemann",
+      "rating": 872,
+      "matches": 1,
+      "wins": 0,
+      "kills": 1,
+      "points": 658,
+      "isBot": true
+    },
+    {
+      "id": "bot-turing",
+      "name": "turing",
+      "rating": 890,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": true
+    },
+    {
+      "id": "bot-lovelace",
+      "name": "lovelace",
+      "rating": 906,
+      "matches": 2,
+      "wins": 0,
+      "kills": 0,
+      "points": 498,
+      "isBot": true
+    },
+    {
+      "id": "bot-cantor",
+      "name": "cantor",
+      "rating": 968,
+      "matches": 2,
+      "wins": 1,
+      "kills": 4,
+      "points": 2560,
+      "isBot": true
+    },
+    {
+      "id": "bot-hilbert",
+      "name": "hilbert",
+      "rating": 971,
+      "matches": 2,
+      "wins": 0,
+      "kills": 1,
+      "points": 1533,
+      "isBot": true
+    },
+    {
+      "id": "bot-laplace",
+      "name": "laplace",
+      "rating": 983,
+      "matches": 2,
+      "wins": 0,
+      "kills": 0,
+      "points": 810,
+      "isBot": true
+    },
+    {
+      "id": "bot-fourier",
+      "name": "fourier",
+      "rating": 1010,
+      "matches": 2,
+      "wins": 0,
+      "kills": 0,
+      "points": 1495,
+      "isBot": true
+    },
+    {
+      "id": "bot-maxwell",
+      "name": "maxwell",
+      "rating": 1040,
+      "matches": 2,
+      "wins": 1,
+      "kills": 3,
+      "points": 2333,
+      "isBot": true
+    },
+    {
+      "id": "bot-galois",
+      "name": "galois",
+      "rating": 1061,
+      "matches": 2,
+      "wins": 0,
+      "kills": 5,
+      "points": 2367,
+      "isBot": true
+    },
+    {
+      "id": "bot-ramanujan",
+      "name": "ramanujan",
+      "rating": 1084,
+      "matches": 2,
+      "wins": 0,
+      "kills": 4,
+      "points": 2653,
+      "isBot": true
+    },
+    {
+      "id": "bot-erdos",
+      "name": "erdos",
+      "rating": 1124,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": true
+    },
+    {
+      "id": "bot-poincare",
+      "name": "poincare",
+      "rating": 1150,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": true
+    },
+    {
+      "id": "bot-archimedes",
+      "name": "archimedes",
+      "rating": 1176,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": true
+    },
+    {
+      "id": "bot-pythagoras",
+      "name": "pythagoras",
+      "rating": 1202,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": true
+    },
+    {
+      "id": "bot-descartes",
+      "name": "descartes",
+      "rating": 1228,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": true
+    },
+    {
+      "id": "bot-leibniz",
+      "name": "leibniz",
+      "rating": 1254,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": true
+    },
+    {
+      "id": "bot-cauchy",
+      "name": "cauchy",
+      "rating": 1280,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": true
+    },
+    {
+      "id": "bot-weierstrass",
+      "name": "weierstrass",
+      "rating": 1306,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": true
+    },
+    {
+      "id": "bot-bolzano",
+      "name": "bolzano",
+      "rating": 1332,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": true
+    },
+    {
+      "id": "bot-lagrange",
+      "name": "lagrange",
+      "rating": 1358,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": true
+    },
+    {
+      "id": "bot-jacobi",
+      "name": "jacobi",
+      "rating": 1384,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": true
+    },
+    {
+      "id": "bot-hamilton",
+      "name": "hamilton",
+      "rating": 1410,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": true
+    },
+    {
+      "id": "bot-abel",
+      "name": "abel",
+      "rating": 1436,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": true
+    },
+    {
+      "id": "bot-dirichlet",
+      "name": "dirichlet",
+      "rating": 1462,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": true
+    },
+    {
+      "id": "bot-dedekind",
+      "name": "dedekind",
+      "rating": 1488,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": true
+    },
+    {
+      "id": "bot-kronecker",
+      "name": "kronecker",
+      "rating": 1514,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": true
+    },
+    {
+      "id": "bot-zeta",
+      "name": "zeta",
+      "rating": 1540,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": true
+    },
+    {
+      "id": "bot-lhopital",
+      "name": "lhopital",
+      "rating": 1566,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": true
+    }
+  ],
+  "players": [
+    {
+      "id": "smoke-1793739973227",
+      "name": "smoke",
+      "rating": 1000,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": false,
+      "createdAt": 1793739973229,
+      "lastSeen": 1793739973233
+    },
+    {
+      "id": "smoke-1793740158244",
+      "name": "smoke",
+      "rating": 1000,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": false,
+      "createdAt": 1793740158245,
+      "lastSeen": 1793740158259
+    },
+    {
+      "id": "smoke-1793740381219",
+      "name": "smoke",
+      "rating": 1000,
+      "matches": 0,
+      "wins": 0,
+      "kills": 0,
+      "points": 0,
+      "isBot": false,
+      "createdAt": 1793740381222,
+      "lastSeen": 1793740381251
+    }
+  ]
+}
