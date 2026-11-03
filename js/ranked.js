@@ -185,12 +185,15 @@ function buildMatch(mm) {
     soldiers: mm.soldiers.map(soldier => ({
       ...soldier,
       alive: soldier.alive !== false,
+      health: soldier.health != null ? soldier.health : 100,
+      maxHealth: soldier.maxHealth != null ? soldier.maxHealth : 100,
       expression: soldier.expression || "",
       ready: !!soldier.ready,
       team: "ffa",
       kind: soldier.isBot ? "bot" : "player"
     })),
     avgRating: mm.avgRating,
+    round: mm.round || 1,
     shots: 0,
     friendly: 0,
     over: mm.phase === "result",
@@ -259,6 +262,7 @@ function applyMatchState(s) {
       match: M,
       mySlot: mm.mySlot,
       phase: mm.phase,
+      round: mm.round || 1,
       codeEndsAt: localTime(mm.codeEndsAt),
       countdownEndsAt: localTime(mm.countdownEndsAt),
       combatStartedAt: localTime(mm.combatStartedAt),
@@ -272,9 +276,12 @@ function applyMatchState(s) {
   } else {
     const previous = ranked.phase;
     const mmPhase = mm.phase;
+    const newRound = !!mm.round && mm.round !== ranked.round;
     M.soldiers = mm.soldiers.map(soldier => ({
       ...soldier,
       alive: soldier.alive !== false,
+      health: soldier.health != null ? soldier.health : 100,
+      maxHealth: soldier.maxHealth != null ? soldier.maxHealth : 100,
       expression: soldier.expression || "",
       ready: !!soldier.ready,
       team: "ffa",
@@ -283,12 +290,35 @@ function applyMatchState(s) {
     M.avgRating = mm.avgRating;
     M.phase = mm.phase;
     M.over = mm.phase === "result";
+    M.round = mm.round || ranked.round;
     M.submissions = mm.submissions || null;
     ranked.match = M;
     ranked.mySlot = mm.mySlot;
+    ranked.round = mm.round || ranked.round;
     ranked.codeEndsAt = localTime(mm.codeEndsAt);
     ranked.countdownEndsAt = localTime(mm.countdownEndsAt);
     if (mm.combatStartedAt) ranked.combatStartedAt = localTime(mm.combatStartedAt);
+    ranked.roundHealth = M.soldiers.map(soldier => soldier.health);
+    if (newRound) {
+      ranked.resolution = null;
+      ranked.result = null;
+      ranked.feedShown = new Set();
+      ranked.feedItems = [];
+      const human = M.soldiers[ranked.mySlot];
+      if (human && human.health > 0) {
+        inp.value = "";
+        inp.disabled = false;
+        $("fire").disabled = false;
+        $("fire").textContent = "lock in";
+      } else {
+        inp.disabled = true;
+        $("fire").disabled = true;
+        $("fire").textContent = "locked";
+        setStatus("you were eliminated in round " + (M.round - 1) + ". waiting for the lobby…", "err");
+      }
+      setStatus("round " + M.round + " — cannons repositioned. write an equation, then <b>lock in</b>.", "ok");
+      $("feed").innerHTML = "<span>round " + M.round + " — all cannons repositioned.</span>";
+    }
     if (previous !== mm.phase) {
       if (mm.phase === "countdown") {
         inp.disabled = true;
@@ -424,9 +454,20 @@ function renderRoster(now) {
   const t = r.phase === "combat"
     ? Math.max(0, (now - r.combatStartedAt) / 1000)
     : r.phase === "result" ? 1e9 : 0;
+  const healthAt = (s, time) => {
+    if (r.phase === "code" || r.phase === "countdown") return s.health;
+    if (!r.resolution) return s.health;
+    if (r.phase !== "combat" && r.phase !== "result") return s.health;
+    const start = r.roundHealth ? r.roundHealth[s.slot] : s.health;
+    let h = start;
+    for (const ev of (r.resolution.hitEvents || [])) {
+      if (ev.target === s.slot && time >= ev.time) h -= ev.amount;
+    }
+    return Math.max(0, h);
+  };
   $("roster").innerHTML = m.soldiers.map(s => {
-    const deadNow = !!r.resolution && r.resolution.deathAt[s.slot] != null &&
-      t >= r.resolution.deathAt[s.slot];
+    const h = healthAt(s, t);
+    const deadNow = r.phase !== "code" && r.phase !== "countdown" && h <= 0;
     const kills = r.resolution ? (r.resolution.kills[s.slot] || 0) : 0;
     let status = "coding";
     if (r.phase === "code" || r.phase === "countdown") {
@@ -434,7 +475,7 @@ function renderRoster(now) {
     } else if (r.phase === "combat" || r.phase === "result") {
       const by = r.resolution && r.resolution.killedBy[s.slot] != null
         ? m.soldiers[r.resolution.killedBy[s.slot]] : null;
-      status = deadNow ? ("dead" + (by ? " · by " + by.name : "")) : ("alive · " + kills + " kills");
+      status = deadNow ? ("dead" + (by ? " · by " + by.name : "")) : ("alive · " + kills + " kills · " + Math.round(h) + "/" + (s.maxHealth || 100));
     }
     const tag = s.slot === r.mySlot
       ? '<span class="tag you">you</span>'
@@ -445,7 +486,8 @@ function renderRoster(now) {
       '" title="' + esc(s.name) + ' · ' + s.rating + ' rating">' +
       '<div class="nm"><i class="pdot" style="background:' + s.color + '"></i><span>' +
       esc(s.name) + '</span>' + tag + '</div>' +
-      '<div class="meta"><span>' + s.rating + '</span><span>' + esc(status) + '</span></div></div>';
+      '<div class="meta"><span>' + s.rating + '</span><span>' + esc(status) + '</span></div>' +
+      '<div class="hpwrap"><i class="hpfill" style="width:' + Math.max(0, Math.min(100, (h / (s.maxHealth || 100)) * 100)) + '%"></i></div>';
   }).join("");
   updateStats();
 }
@@ -466,8 +508,8 @@ function updateRankedUI(now, force) {
     $("ctimer").textContent = fmtTime(Math.max(0, r.codeEndsAt - now));
     const human = r.match.soldiers[r.mySlot];
     $("fire").textContent = human.ready ? "locked" : "lock in";
-    $("fire").disabled = !!human.ready;
-    inp.disabled = !!human.ready;
+    $("fire").disabled = !(human && human.health > 0 && !human.ready);
+    inp.disabled = !(human && human.health > 0 && !human.ready);
   } else if (r.phase === "countdown") {
     badge.textContent = "fire";
     badge.classList.add("live");
@@ -487,10 +529,10 @@ function updateRankedUI(now, force) {
     $("fire").disabled = true;
     inp.disabled = true;
   }
-  const alive = r.resolution
+  const alive = r.phase === "combat" && r.resolution
     ? r.match.soldiers.filter((s, i) => r.resolution.deathAt[i] == null).length
-    : r.match.soldiers.filter(s => s.alive).length;
-  $("lobbylabel").textContent = "lobby · avg " + r.match.avgRating + " · " + alive + " alive";
+    : r.match.soldiers.filter(s => s.health > 0).length;
+  $("lobbylabel").textContent = "round " + (r.round || 1) + " · avg " + r.match.avgRating + " · " + alive + " alive";
   if (r.phase === "combat" || r.phase === "result") {
     const t = r.phase === "combat" ? (now - r.combatStartedAt) / 1000 : 1e9;
     collectFeed(t);
@@ -561,6 +603,17 @@ function drawRanked() {
   const t = r.phase === "combat"
     ? (Date.now() - r.combatStartedAt) / 1000
     : r.phase === "result" ? (r.resolution ? r.resolution.endTime + 1 : 0) : 0;
+  const hFor = (s, time) => {
+    if (r.phase === "code" || r.phase === "countdown") return s.health;
+    if (!r.resolution) return s.health;
+    if (r.phase !== "combat" && r.phase !== "result") return s.health;
+    const start = r.roundHealth ? r.roundHealth[s.slot] : s.health;
+    let h = start;
+    for (const ev of (r.resolution.hitEvents || [])) {
+      if (ev.target === s.slot && time >= ev.time) h -= ev.amount;
+    }
+    return Math.max(0, h);
+  };
   drawBaseField();
 
   ctx.textAlign = "left";
@@ -611,8 +664,8 @@ function drawRanked() {
   ctx.font = "bold 10px " + MONO;
   m.soldiers.forEach(s => {
     const px = X(s.x), py = Y(s.y);
-    const deadNow = !!r.resolution && r.resolution.deathAt[s.slot] != null &&
-      t >= r.resolution.deathAt[s.slot];
+    const h = hFor(s, t);
+    const deadNow = r.phase !== "code" && r.phase !== "countdown" && h <= 0;
     if (deadNow) {
       ctx.strokeStyle = s.color;
       ctx.lineWidth = 3;
@@ -657,6 +710,13 @@ function drawRanked() {
       ctx.stroke();
     }
     const label = s.slot === r.mySlot ? "YOU" : s.name;
+    const hmax = s.maxHealth || 100;
+    const hpY = py - 29;
+    ctx.strokeStyle = "#141211";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(px - 13, hpY, 26, 4);
+    ctx.fillStyle = h > 0 ? "#3fcf6b" : "#ff5a4d";
+    ctx.fillRect(px - 13, hpY, Math.max(0, (26 * h) / hmax), 4);
     ctx.lineWidth = 3;
     ctx.strokeStyle = "#fbf7ec";
     ctx.strokeText(label, px, py - 15);
@@ -728,6 +788,10 @@ function lockIn() {
   }
   if (phase !== "code" || !ranked) return false;
   const soldier = ranked.match.soldiers[ranked.mySlot];
+  if (!soldier || soldier.health <= 0) {
+    setStatus("you are out of the fight — health 0.", "err");
+    return false;
+  }
   if (soldier.ready) return true;
   const expression = inp.value.trim();
   if (!expression) {
@@ -858,6 +922,7 @@ function matchSnapshot() {
       relative: true,
       mySlot: r.mySlot,
       avgRating: m.avgRating,
+      round: m.round || r.round || 1,
       codeLeftMs: r.phase === "code" ? Math.max(0, r.codeEndsAt - now) : 0,
       countdownLeftMs: r.phase === "countdown" ? Math.max(0, r.countdownEndsAt - now) : 0,
       combatT: r.phase === "combat" ? (now - r.combatStartedAt) / 1000 :
@@ -871,6 +936,8 @@ function matchSnapshot() {
         rating: soldier.rating,
         isBot: soldier.isBot,
         alive: soldier.alive,
+        health: soldier.health,
+        maxHealth: soldier.maxHealth,
         x: soldier.x,
         y: soldier.y,
         dir: soldier.dir,
@@ -966,6 +1033,8 @@ function getMap() {
       team: soldier.team,
       kind: soldier.kind,
       alive: soldier.alive,
+      health: soldier.health,
+      maxHealth: soldier.maxHealth,
       x: soldier.x,
       y: soldier.y,
       dir: soldier.dir,

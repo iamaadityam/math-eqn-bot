@@ -4,11 +4,12 @@ const WebSocket = require("ws");
 const ws = new WebSocket(process.env.WS_URL || "ws://127.0.0.1:8787/ws");
 let lockedRoom = "";
 let finished = false;
+let sentRound = -1;
 const started = Date.now();
 const timer = setTimeout(() => {
   console.error("timeout");
   process.exit(1);
-}, 30000);
+}, 180000);
 
 function send(message) {
   ws.send(JSON.stringify(message));
@@ -39,13 +40,15 @@ ws.on("message", raw => {
     console.log("queued");
   } else if (state.phase === "queue") {
     console.log("queue:", state.queue.humans, "human(s),", state.queue.botSeats, "bot seat(s)");
-  } else if (state.phase === "code" && lockedRoom !== state.match.id) {
-    lockedRoom = state.match.id;
-    const expression = aim(state.match);
-    console.log("room:", state.match.id, "slot", state.match.mySlot, "dir",
-      state.match.soldiers[state.match.mySlot].dir, "bots",
-      state.match.soldiers.filter(s => s.isBot).length, "aim", expression);
-    send({ type: "submit", expression, lock: true });
+  } else if (state.phase === "code") {
+    if (sentRound !== state.match.round) {
+      sentRound = state.match.round;
+      const expression = aim(state.match);
+      console.log("room:", state.match.id, "round", state.match.round, "slot", state.match.mySlot, "dir",
+        state.match.soldiers[state.match.mySlot].dir, "bots",
+        state.match.soldiers.filter(s => s.isBot).length, "aim", expression);
+      send({ type: "submit", expression, lock: true });
+    }
   } else if (state.phase === "result" && !finished) {
     finished = true;
     const me = state.result.rows.find(row => row.slot === state.match.mySlot);

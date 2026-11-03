@@ -126,16 +126,27 @@ async function testThreeHumansFillWithBots() {
       client.send({ type: "submit", expression: aim(state.match), lock: true });
     }
 
-    const resultStates = await Promise.all(clients.map(client =>
-      client.waitFor(state => state.phase === "result", 30000)));
-    for (const state of resultStates) {
-      assert.equal(state.result.rows.length, 10);
-      const me = state.result.rows.find(row => row.slot === state.match.mySlot);
-      assert.ok(me, "own result row exists");
-      assert.ok(me.points > 0, "every loser still earns points");
-      assert.equal(typeof me.ratingAfter, "number");
-      assert.equal(me.ratingAfter, me.rating + me.delta);
+    let round = codeStates[0].match.round;
+    let finalState = null;
+    while (true) {
+      for (const client of clients) {
+        const state = client.state;
+        if (state.phase === "code" && state.match.round === round) {
+          const meNow = state.match.soldiers[state.match.mySlot];
+          if (meNow.health > 0) client.send({ type: "submit", expression: aim(state.match), lock: true });
+        }
+      }
+      const states = await Promise.all(clients.map(client => client.waitFor(
+        state => state.phase === "result" || (state.phase === "code" && state.match.round > round), 45000)));
+      const next = states[0];
+      if (next.phase === "result") { finalState = next; break; }
+      round = next.match.round;
     }
+    const final = finalState.result.rows[finalState.match.mySlot];
+    assert.equal(finalState.result.rows.length, 10);
+    assert.ok(final.points > 0, "every loser still earns points");
+    assert.equal(typeof final.ratingAfter, "number");
+    assert.equal(final.ratingAfter, final.rating + final.delta);
     const board = app.hub.stateFor(clients[0].token).leaderboard;
     const humanRows = board.filter(row => !row.isBot && ["p1", "p2", "p3"].includes(row.name));
     assert.equal(humanRows.length, 3, "all three humans are on the shared ladder");
@@ -239,7 +250,19 @@ async function testReconnectDuringCode() {
     assert.ok(plan.expression, "plan helper returns an expression");
 
     reconnected.send({ type: "submit", expression: plan.expression, lock: true });
-    const result = await reconnected.waitFor(state => state.phase === "result", 30000);
+    let rround = back.match.round;
+    let result = null;
+    while (true) {
+      const st = reconnected.state;
+      if (st.phase === "code" && st.match.round === rround) {
+        const cur = st.match.soldiers[st.match.mySlot];
+        if (cur.health > 0) reconnected.send({ type: "submit", expression: plan.expression, lock: true });
+      }
+      const next = await reconnected.waitFor(state =>
+        state.phase === "result" || (state.phase === "code" && state.match.round > rround), 60000);
+      if (next.phase === "result") { result = next; break; }
+      rround = next.match.round;
+    }
     assert.equal(result.result.rows.length, 10);
     assert.ok(result.result.rows.find(row => row.slot === slot).points > 0);
 

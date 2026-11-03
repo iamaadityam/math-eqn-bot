@@ -346,6 +346,32 @@ function slotPose(slot){
   const left=slot<5, i=slot%5;
   return {x:left?RANKED_X_LEFT[i]:RANKED_X_RIGHT[i], y:RANKED_Y[i], dir:left?1:-1};
 }
+/* Every surviving soldier (player or bot) gets a fresh random spawn that is
+   at least SPAWN_GAP apart from every other soldier on the board. */
+function repositionSoldiers(match,minDistance=CFG.SPAWN_GAP){
+  const aliveSlots=[...Array(match.soldiers.length).keys()]
+    .filter(slot=>match.soldiers[slot].health!=null?match.soldiers[slot].health>0:true);
+  const placed=[];
+  for(const slot of aliveSlots){
+    const soldier=match.soldiers[slot];
+    const left=slot<5;
+    let candidate=null;
+    for(let attempt=0;attempt<2400;attempt++){
+      const x=left?-2-Math.abs(1+Math.random()*19):(2+Math.abs(1+Math.random()*19));
+      const y=+(Math.random()*24-12).toFixed(1);
+      if(!clearOfTerrain(match.terrain,x,y,1.2)) continue;
+      const nearest=placed.length?Math.min(...placed.map(p=>Math.hypot(p.x-x,p.y-y))):1e9;
+      if(nearest>=minDistance){ candidate={x,y}; break; }
+      if(!candidate||nearest>candidate.r) candidate={x,y,r:nearest};
+    }
+    if(!candidate) candidate={x:0,y:0,r:99};
+    const pose={x:candidate.x,y:candidate.y,dir:left?1:-1};
+    soldier.x=pose.x; soldier.y=pose.y; soldier.dir=pose.dir;
+    placed.push({x:pose.x,y:pose.y});
+  }
+  for(const slot of aliveSlots) match.soldiers[slot].alive = match.soldiers[slot].health>0;
+  return match;
+}
 function genRankedMatch(participants){
   const players=shuffle(participants).slice(0,CFG.RANKED_SIZE);
   const soldiers=[];
@@ -355,16 +381,19 @@ function genRankedMatch(participants){
     soldiers.push({
       slot,id:p.id,name:p.name,rating:p.rating|0,isBot:!!p.isBot,
       team:"ffa",kind:p.isBot?"bot":"player",x:pose.x,y:pose.y,dir:pose.dir,
-      alive:true,color:RANKED_COLORS[slot],expression:"",ready:false,lockAt:null,targetSlot:null
+      alive:true,color:RANKED_COLORS[slot],expression:"",ready:false,lockAt:null,targetSlot:null,
+      health:CFG.MAX_HEALTH,maxHealth:CFG.MAX_HEALTH,round:1,rounds:0
     });
   }
   const terrain=genTerrain({obstacles:randInt(4,7)},soldiers,-8,8);
-  return {
+  const match={
     ranked:true,id:"lobby-"+Date.now().toString(36),mode:"normal",relative:true,
     terrain,soldiers,zones:[],shots:0,friendly:0,over:false,
-    phase:"code",createdAt:Date.now(),submissions:Array(CFG.RANKED_SIZE).fill(null),
+    phase:"code",createdAt:Date.now(),round:1,rounds:0,submissions:Array(CFG.RANKED_SIZE).fill(null),
     feed:[]
   };
+  repositionSoldiers(match,CFG.SPAWN_GAP);
+  return match;
 }
 
 /* mirrored local frame for a left-facing cannon.
@@ -434,23 +463,28 @@ function circleFirstTime(pts,cum,tx,ty,r){
 }
 
 /* authoritative simultaneous resolution.
-   All beams launch at t=0. Hits are processed chronologically in batches:
-   kills at the same instant are simultaneous. Once a shooter dies its beam
-   ends at that instant, so every later hit from that beam is discarded. */
+   All beams launch at t=0. Every cannon that is still standing may fire.
+   Beams resolve chronologically, with hits sharing an instant landing together.
+   A dead shooter's beam ends at the death instant, so later hits from it stop.
+   Damage is applied per hit; health carries from round to round. */
 function resolveRanked(match,submissions){
   const n=match.soldiers.length;
   const beams=Array(n).fill(null);
   const errors=Array(n).fill(null);
+  const health=match.soldiers.map(s=>Number.isFinite(s.health)?s.health:CFG.MAX_HEALTH);
+  const maxHealth=match.soldiers.map(s=>Number.isFinite(s.maxHealth)?s.maxHealth:CFG.MAX_HEALTH);
+  const healthBefore=health.slice();
+  const alive=health.map(h=>h>0);
+  const damage=Array(n).fill(0);
+  const hitEvents=[];
   for(let i=0;i<n;i++){
     const sub=submissions[i];
-    if(!sub||!sub.expression||!String(sub.expression).trim()){
-      errors[i]="no equation submitted"; continue;
-    }
+    if(health[i]<=0){ errors[i]="eliminated"; continue; }
+    if(!sub||!sub.expression||!String(sub.expression).trim()){ errors[i]="no equation submitted"; continue; }
     try{
       beams[i]=shotPath(match,i,sub.expression,{angle:sub.angle,fields:sub.fields});
     }catch(e){ errors[i]=e.message; }
   }
-  const alive=Array(n).fill(true);
   const deathAt=Array(n).fill(null);
   const killedBy=Array(n).fill(null);
   const kills=Array(n).fill(0);
@@ -461,7 +495,7 @@ function resolveRanked(match,submissions){
       if(t===i) continue;
       const s=match.soldiers[t];
       const time=circleFirstTime(b.pts,b.cum,s.x,s.y,CFG.SOLDIER_R);
-      if(isFinite(time)&&time<=b.pathEndAt+1e-9){
+      if(isFinite(time)&&time<=b.pathEndAt+1e-9 && health[t]>0){
         hits.push({shooter:i,target:t,time});
       }
     }
@@ -474,39 +508,51 @@ function resolveRanked(match,submissions){
     const time=hits[idx].time;
     const batch=[];
     while(idx<hits.length && hits[idx].time-time<1e-7){ batch.push(hits[idx++]); }
-    const landed=[], seen=new Set();
+    const atStart=health.map(h=>h>0);
+    const landed=[];
     for(const h of batch){
-      if(!alive[h.shooter]||!alive[h.target]) continue;
+      if(!atStart[h.shooter]||!atStart[h.target]) continue;
       if(time>beamEnd[h.shooter]+1e-9) continue;
-      if(seen.has(h.target)) continue;
-      seen.add(h.target); landed.push(h);
+      landed.push(h);
+    }
+    const killedNow=new Set();
+    for(const h of landed){
+      damage[h.target]+=CFG.HIT_DAMAGE;
+      health[h.target]-=CFG.HIT_DAMAGE;
+      hitEvents.push({time,target:h.target,shooter:h.shooter,amount:CFG.HIT_DAMAGE});
+      if(atStart[h.target] && health[h.target]<=0 && deathAt[h.target]==null){
+        deathAt[h.target]=time; killedBy[h.target]=h.shooter;
+        killedNow.add(h.target);
+      }
     }
     for(const h of landed){
-      alive[h.target]=false; deathAt[h.target]=time; killedBy[h.target]=h.shooter;
-      kills[h.shooter]++; beamEnd[h.target]=time;
-      events.push({time,target:h.target,shooter:h.shooter});
+      if(health[h.target]<=0) beamEnd[h.target]=Math.min(beamEnd[h.target],time);
     }
-    for(const h of landed){
-      // the shooter may also have died in this same batch; the beam is
-      // still valid at the shared instant, then terminates.
-      if(!alive[h.target]) beamEnd[h.target]=Math.min(beamEnd[h.target],time);
+    for(const target of killedNow){
+      kills[killedBy[target]]++;
+      events.push({time,target,shooter:killedBy[target]});
     }
   }
   const endTime=Math.max(1,...beamEnd.filter((_,i)=>beams[i]));
   const survivors=[];
   const dead=[];
-  for(let i=0;i<n;i++) (alive[i]?survivors:dead).push(i);
-  survivors.sort((a,b)=>kills[b]-kills[a]||match.soldiers[b].rating-match.soldiers[a].rating||a-b);
-  dead.sort((a,b)=>deathAt[b]-deathAt[a]||kills[b]-kills[a]||a-b);
+  for(let i=0;i<n;i++) (health[i]>0?survivors:dead).push(i);
+  survivors.sort((a,b)=>kills[b]-kills[a]||damage[b]-damage[a]||match.soldiers[b].rating-match.soldiers[a].rating||a-b);
+  dead.sort((a,b)=>(deathAt[b]??0)-(deathAt[a]??0)||kills[b]-kills[a]||damage[b]-damage[a]||a-b);
   const order=[...survivors,...dead];
 
   const rows=order.map((slot,rank)=>{
-    const survived=alive[slot]?endTime:(deathAt[slot]??0);
+    const isAlive=health[slot]>0;
+    const survived=isAlive?endTime:(deathAt[slot]??0);
     const points=kills[slot]*100+Math.floor(survived*3)+(CFG.PLACEMENT[rank]||0);
     return {
       slot,rank:rank+1,points,kills:kills[slot],
-      alive:alive[slot],survived,
+      alive:isAlive,survived,
       deathAt:deathAt[slot],killedBy:killedBy[slot],
+      health:isAlive?health[slot]:0,
+      healthBefore:healthBefore[slot],
+      maxHealth:maxHealth[slot],
+      damage:damage[slot],
       id:match.soldiers[slot].id,name:match.soldiers[slot].name,
       rating:match.soldiers[slot].rating,isBot:match.soldiers[slot].isBot,
       color:match.soldiers[slot].color,
@@ -516,17 +562,23 @@ function resolveRanked(match,submissions){
   });
 
   // Elo vs. the rest of the lobby (actual = 1 for 1st ... 0 for last)
-  for(const r of rows){
-    const others=rows.filter(o=>o.slot!==r.slot);
+  const finalRows=applyElo(rows);
+  return {
+    endTime,beams,errors,events,alive:health.map(h=>h>0),deathAt,killedBy,kills,damage,health,
+    healthBefore,maxHealth,hitEvents,winnerSlot:order[0],rankOf:Object.fromEntries(finalRows.map(r=>[r.slot,r.rank])),
+    rows:finalRows
+  };
+}
+function applyElo(rows){
+  const n=rows.length;
+  const finalRows=rows.map(r=>({...r}));
+  for(const r of finalRows){
+    const others=finalRows.filter(o=>o.slot!==r.slot);
     const avg=others.reduce((a,o)=>a+o.rating,0)/Math.max(1,others.length);
     const exp=1/(1+Math.pow(10,(avg-r.rating)/400));
-    const actual=(n-r.rank)/(n-1);
+    const actual=(n-r.rank)/(Math.max(1,n-1));
     r.delta=Math.round(CFG.ELO_K*(actual-exp));
     r.ratingAfter=r.rating+r.delta;
   }
-
-  return {
-    endTime,beams,errors,events,alive,deathAt,killedBy,kills,rows,
-    winnerSlot:order[0],rankOf:Object.fromEntries(rows.map(r=>[r.slot,r.rank]))
-  };
+  return finalRows;
 }

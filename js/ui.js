@@ -446,6 +446,10 @@ document.querySelectorAll("[data-drag]").forEach(w=>{
 });
 (function tick(){ $("clock").textContent=new Date().toTimeString().slice(0,8); setTimeout(tick,1000); })();
 
+const glow=$("pointerglow");
+addEventListener("pointermove",e=>{ if(!glow) return; glow.style.transform=`translate(${e.clientX}px,${e.clientY}px)`; glow.classList.add("on"); },{passive:true});
+addEventListener("pointerleave",()=>{ if(glow) glow.classList.remove("on"); });
+
 /* boot */
 (function boot(){
   const el=$("boot"); let seen=false;

@@ -55,27 +55,6 @@ function getLeaderboard(){
   rows.forEach((r,i)=>{ r.pos=i+1; r.me=!r.isBot; });
   return rows;
 }
-function recordRankedResult(rows){
-  const ladder=getLadder();
-  const profile=getProfile();
-  let changed=false;
-  for(const r of rows){
-    const target=r.isBot?ladder.find(b=>b.id===r.id):profile;
-    if(!target) continue;
-    target.rating=r.ratingAfter;
-    target.matches=(target.matches||0)+1;
-    target.wins=(target.wins||0)+(r.rank===1?1:0);
-    target.kills=(target.kills||0)+r.kills;
-    target.points=(target.points||0)+r.points;
-    changed=true;
-  }
-  if(changed){ store.set(STORE_KEYS.ladder,ladder); store.set(STORE_KEYS.profile,profile); }
-  return getLeaderboard();
-}
-function resetLadder(){
-  store.del(STORE_KEYS.ladder); store.del(STORE_KEYS.profile);
-  return getLeaderboard();
-}
 
 /* ------------------------------------------------------- skill matchmaking
    Pure function. Give it any number of participants and it returns lobbies.

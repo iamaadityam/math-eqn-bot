@@ -6,6 +6,7 @@ const crypto = require("node:crypto");
 const { makeLobbies } = require("./matchmaker");
 
 const SIZE = 10;
+const MAX_HEALTH = 100;
 const VERSION = "2.0.0";
 const TOKEN_RE = /^[A-Za-z0-9_.:-]{3,100}$/;
 const humanKey = token => "h:" + token;
@@ -36,10 +37,13 @@ function publicRow(row) {
     rank: row.rank,
     points: row.points,
     kills: row.kills,
+    damage: row.damage,
     alive: row.alive,
     survived: row.survived,
     deathAt: row.deathAt,
     killedBy: row.killedBy,
+    health: row.health,
+    maxHealth: row.maxHealth,
     name: row.name,
     rating: row.rating,
     isBot: row.isBot,
@@ -342,6 +346,7 @@ class Hub {
       match,
       seats,
       phase: "code",
+      round: 1,
       codeEndsAt: now + this.clock.codeMs,
       countdownEndsAt: 0,
       combatStartedAt: 0,
@@ -349,12 +354,29 @@ class Hub {
       submissions: null,
       resolution: null,
       resultRows: null,
+      totals: Array.from({ length: SIZE }, (_, slot) => ({
+        slot,
+        points: 0,
+        kills: 0,
+        damage: 0,
+        survived: 0,
+        rounds: 0
+      })),
+      eliminations: [],
+      eliminationSeq: 0,
       finishedAt: 0,
       createdAt: now
     };
 
     for (let slot = 0; slot < seats.length; slot++) {
       const seat = seats[slot];
+      seat.slot = slot;
+      const soldier = match.soldiers[slot];
+      soldier.round = room.round;
+      soldier.rounds = 0;
+      soldier.health = MAX_HEALTH;
+      soldier.maxHealth = MAX_HEALTH;
+      soldier.alive = true;
       if (seat.kind !== "bot") continue;
       try {
         seat.plan = this.game.chooseBotShot(match, slot);
@@ -399,6 +421,7 @@ class Hub {
       relative: true,
       mySlot: slot,
       avgRating: match.avgRating,
+      round: room.round,
       codeEndsAt: room.codeEndsAt || 0,
       countdownEndsAt: room.countdownEndsAt || 0,
       combatStartedAt: room.combatStartedAt || 0,
@@ -412,6 +435,8 @@ class Hub {
           rating: soldier.rating,
           isBot: soldier.isBot,
           alive: soldier.alive,
+          health: soldier.health,
+          maxHealth: soldier.maxHealth,
           x: soldier.x,
           y: soldier.y,
           dir: soldier.dir,
@@ -521,21 +546,123 @@ class Hub {
       resolution.endTime.toFixed(2) + "s");
   }
 
-  finishRoom(room, now) {
+  finishRound(room, now) {
     if (room.phase !== "combat") return;
     const resolution = room.resolution;
+    const round = room.match.round || 1;
+    room.round = round;
+    const rowBySlot = {};
+    for (const row of resolution.rows) rowBySlot[row.slot] = row;
+
+    for (let slot = 0; slot < room.match.soldiers.length; slot++) {
+      const soldier = room.match.soldiers[slot];
+      const total = room.totals[slot];
+      const row = rowBySlot[slot] || {};
+      soldier.health = resolution.health ? resolution.health[slot] : soldier.health;
+      soldier.maxHealth = resolution.maxHealth ? resolution.maxHealth[slot] : soldier.maxHealth;
+      soldier.alive = !!soldier.health && soldier.health > 0;
+      if (!total) continue;
+      total.points += row.points || 0;
+      total.kills += row.kills || 0;
+      total.damage += resolution.damage ? resolution.damage[slot] || 0 : 0;
+      total.survived += row.survived || 0;
+      total.rounds += 1;
+      const wasAlive = (resolution.healthBefore ? resolution.healthBefore[slot] : soldier.healthBefore || MAX_HEALTH) > 0;
+      if (wasAlive && soldier.health <= 0) {
+        room.eliminations.push({ slot, round, deathAt: resolution.deathAt ? resolution.deathAt[slot] : 0, seq: ++room.eliminationSeq });
+      }
+    }
+
+    const survivors = room.match.soldiers
+      .map((soldier, index) => (soldier.health > 0 ? index : -1))
+      .filter(index => index >= 0);
+    if (survivors.length > 1) return this.beginNextRound(room, now);
+    return this.finishMatch(room, now);
+  }
+
+  beginNextRound(room, now) {
+    room.round += 1;
+    room.match.round = room.round;
+    room.match.rounds = room.round;
+    this.game.repositionSoldiers(room.match, 6);
+    room.phase = "code";
+    room.codeEndsAt = now + this.clock.codeMs;
+    room.countdownEndsAt = 0;
+    room.combatStartedAt = 0;
+    room.combatEndsAt = 0;
+    room.submissions = null;
+    room.resolution = null;
+    room.resultRows = null;
+    for (const seat of room.seats) {
+      const soldier = room.match.soldiers[seat.slot];
+      const dead = !(soldier.health > 0);
+      seat.ready = dead;
+      seat.expression = dead ? "0" : "";
+      seat.plan = null;
+      seat.lockAt = dead ? 0 : now;
+      if (!dead && seat.kind === "bot") {
+        try {
+          seat.plan = this.game.chooseBotShot(room.match, seat.slot);
+        } catch (error) { seat.plan = { expression: "0", targetSlot: null, expectedKills: 0 }; }
+        const fast = this.clock.codeMs <= 20000;
+        const delay = fast ? 300 + Math.random() * Math.min(3000, this.clock.codeMs * 0.42) : this.game.botReadyDelay(soldier.rating);
+        seat.lockAt = now + delay;
+      }
+    }
+    this.broadcastRoom(room);
+    this.log.log("[room] " + room.id + " round " + room.round + " · repositioning " +
+      room.match.soldiers.filter(soldier => soldier.health > 0).length + " survivor(s)");
+  }
+
+  finishMatch(room, now) {
+    const resolution = room.resolution;
+    const survivors = room.match.soldiers
+      .map((soldier, index) => (soldier.health > 0 ? index : -1))
+      .filter(index => index >= 0);
+    const finalOrder = survivors.slice().sort((a, b) => room.totals[b].points - room.totals[a].points || a - b);
+    const eliminated = [...room.eliminations].sort((a, b) =>
+      (b.round - a.round) ||
+      ((resolution ? resolution.deathAt : null)?.[b.slot] || 0) - ((resolution ? resolution.deathAt : null)?.[a.slot] || 0) ||
+      (room.totals[b.slot].points - room.totals[a.slot].points) ||
+      (b.slot - a.slot)
+    );
+    for (const entry of eliminated) finalOrder.push(entry.slot);
+    const finalRows = finalOrder.map((slot, index) => {
+      const soldier = room.match.soldiers[slot];
+      const total = room.totals[slot] || { points: 0, kills: 0, damage: 0, survived: 0 };
+      const row = resolution ? resolution.rows.find(candidate => candidate.slot === slot) || {} : {};
+      return {
+        slot,
+        rank: index + 1,
+        points: total.points,
+        kills: total.kills,
+        damage: total.damage,
+        alive: !!soldier.health && soldier.health > 0,
+        survived: total.survived,
+        deathAt: resolution ? resolution.deathAt?.[slot] ?? null : null,
+        killedBy: resolution ? resolution.killedBy?.[slot] ?? null : null,
+        health: soldier.health,
+        maxHealth: soldier.maxHealth,
+        id: soldier.id,
+        name: soldier.name,
+        rating: soldier.rating,
+        isBot: soldier.isBot,
+        color: soldier.color,
+        expression: "",
+        error: null,
+        delta: 0,
+        ratingAfter: soldier.rating
+      };
+    });
+    const finalEloRows = this.game.applyElo(finalRows);
     room.phase = "result";
     room.finishedAt = now;
     room.match.over = true;
-    for (const row of resolution.rows) {
-      room.match.soldiers[row.slot].alive = row.alive;
-      if (!row.isBot && String(row.id).startsWith("h:")) row.id = String(row.id).slice(2);
-    }
-    room.resultRows = resolution.rows;
-    this.ladder.record(resolution.rows);
+    room.resultRows = finalEloRows;
+    this.ladder.record(finalEloRows);
     this.broadcastRoom(room);
-    const winner = resolution.rows.find(row => row.rank === 1);
-    this.log.log("[room] " + room.id + " result · " +
+    const winner = finalEloRows.find(row => row.rank === 1);
+    this.log.log("[room] " + room.id + " result · round " + room.round + " · " +
       (winner ? winner.name + " wins with " + winner.points + " points" : "complete"));
   }
 
@@ -571,7 +698,7 @@ class Hub {
     }
 
     if (room.phase === "combat") {
-      if (now >= room.combatEndsAt) this.finishRoom(room, now);
+      if (now >= room.combatEndsAt) this.finishRound(room, now);
       return;
     }
 

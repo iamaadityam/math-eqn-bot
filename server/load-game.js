@@ -38,7 +38,7 @@ function loadGame() {
     source +
       "\n;globalThis.__GS__={" +
       "CFG,compile,allowedFor,genRankedMatch,genMatch,localWorldFor,simulate," +
-      "shotPath,resolveRanked,chooseBotShot,botReadyDelay,skillOf" +
+      "shotPath,resolveRanked,applyElo,chooseBotShot,botReadyDelay,skillOf,repositionSoldiers" +
       "};",
     sandbox,
     { filename: "graphshot-game.js" }
