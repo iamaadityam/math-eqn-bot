@@ -1,9 +1,7 @@
-FROM python:3.12-slim
+FROM node:20-alpine
 WORKDIR /app
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
-COPY server.py engine.py ./
-COPY public ./public
-ENV PORT=3000 COOKIE_SECURE=true
-EXPOSE 3000
-CMD ["sh", "-c", "uvicorn server:app --host 0.0.0.0 --port ${PORT}"]
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+COPY . .
+EXPOSE 8080
+CMD ["npm", "start"]

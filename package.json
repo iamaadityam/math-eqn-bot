@@ -1,15 +1,18 @@
 {
-  "name": "graphshot-online",
-  "version": "1.0.0",
+  "name": "graphshot",
+  "version": "2.0.0",
   "private": true,
-  "type": "module",
+  "description": "Graphshot — hosted 10-player math-artillery rooms with bot seats and a bot bridge.",
+  "main": "server.js",
   "scripts": {
-    "start": "py server.py || python server.py || python3 server.py",
-    "test": "py -m unittest discover tests || python -m unittest discover tests",
-    "bot:node": "node bots/node_bot.mjs",
-    "bot:python": "py bots/python_bot.py || python bots/python_bot.py"
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node test/server.test.js"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
   }
 }

@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#ff732d">
+<title>graphshot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+<div id="pointerglow" aria-hidden="true"></div>
+
+<div class="ticker" aria-hidden="true"><div class="track">
+  <span><i>///</i>ranked: hosted 10-player rooms. 2 minutes to code. everyone fires at once</span><span><i>///</i>skill queue: 30 seconds, real humans + bots fill every room</span><span><i>///</i>if you die, your beam dies with you</span><span><i>///</i>bot-ready: window.GraphShot + a headless WebSocket API</span>
+  <span><i>///</i>ranked: hosted 10-player rooms. 2 minutes to code. everyone fires at once</span><span><i>///</i>skill queue: 30 seconds, real humans + bots fill every room</span><span><i>///</i>if you die, your beam dies with you</span><span><i>///</i>bot-ready: window.GraphShot + a headless WebSocket API</span>
+</div></div>
+
+<svg id="bgspin" viewBox="-100 -100 200 200" aria-hidden="true" fill="none" stroke="#141211" stroke-width="1.2">
+  <circle r="96"/><circle r="78" stroke-dasharray="2 5"/><circle r="52"/>
+  <path d="M-96 0H96M0-96V96" stroke-width=".8"/><path d="M-67.9-67.9L67.9 67.9M67.9-67.9L-67.9 67.9" stroke-width=".5"/>
+  <path d="M-70 0 Q-35 -45 0 0 T70 0" stroke-width="2.4"/>
+  <circle cx="-70" cy="0" r="4" fill="#141211"/><circle cx="70" cy="0" r="4" fill="#141211"/>
+</svg>
+
+<div id="boot" aria-hidden="true">
+  <div class="l"><b>graphshot os</b> v1.0.0</div>
+  <div class="l">checking grid ......................... ok</div>
+  <div class="l">loading derivative shields ............ ok</div>
+  <div class="l">calibrating parry fields .............. ok</div>
+  <div class="l">arming equation parser (no eval) ...... ok</div>
+  <div class="l">waking matchmaker + bot bridge ........ ok</div>
+  <div class="l"><b>welcome, user.</b></div>
+  <div class="sk">press any key to skip</div>
+</div>
+
+<!-- ================= HOME ================= -->
+<div id="home" class="screen">
+  <div class="win main" data-drag>
+    <div class="tbar"><span class="ttl">welcome.txt</span><span class="tb"><button class="min" title="collapse">_</button></span></div>
+    <div class="wbody">
+      <div class="sticker" aria-hidden="true">
+        <svg viewBox="0 0 100 100"><defs><path id="cp" d="M50 50 m-38 0 a38 38 0 1 1 76 0 a38 38 0 1 1 -76 0"/></defs>
+          <circle cx="50" cy="50" r="48" fill="#ff732d" stroke="#141211" stroke-width="3"/>
+          <text font-family="Silkscreen,monospace" font-size="9.4" fill="#141211" letter-spacing="1.2"><textPath href="#cp">MATH ARTILLERY CLUB * GRAPHSHOT * </textPath></text></svg>
+        <div class="core">f&prime;</div>
+      </div>
+      <h1 class="brand">graph<span>shot</span></h1>
+      <p class="hello">welcome, <b><span class="type">user</span></b><span class="caret"></span></p>
+      <div class="navbig">
+        <button class="big pri" data-go="play" id="nav-play"><span class="n">01</span><span class="t">ranked</span><span class="ar">&rarr;</span><span class="s">10 soldiers. 30s queue. everyone fires at once.</span></button>
+        <button class="big" data-go="practice" id="nav-practice"><span class="n">02</span><span class="t">practice</span><span class="ar">&rarr;</span><span class="s">solo sandbox. every map option unlocked.</span></button>
+        <button class="big" data-go="board"><span class="n">03</span><span class="t">leaderboards</span><span class="ar">&rarr;</span><span class="s">skill rating, kills, wins.</span></button>
+        <button class="big" data-go="tutorial"><span class="n">04</span><span class="t">tutorial</span><span class="ar">&rarr;</span><span class="s">7 short levels.</span></button>
+        <button class="big" data-go="help"><span class="n">05</span><span class="t">help + bot api</span><span class="ar">&rarr;</span><span class="s">equations, ranked rules, bot hooks.</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="win" data-drag>
+    <div class="tbar"><span class="ttl">key.txt</span><span class="tb"><button class="min" title="collapse">_</button></span></div>
+    <div class="wbody"><div class="legendbox">
+      <div><i style="background:#ff732d"></i>you</div>
+      <div><i style="background:#3b5bff"></i>enemy</div>
+      <div><i style="background:#3fcf6b"></i>ally, with an assist field</div>
+      <div><i style="background:#ff4b3a"></i>shield: curve becomes its derivative</div>
+      <div><i style="background:#9a6bff"></i>parry bot: bends your shot back</div>
+      <div><i class="sq" style="background:#141211"></i>obstacle</div>
+    </div></div>
+  </div>
+
+  <div class="win" data-drag>
+    <div class="tbar"><span class="ttl">bots.txt</span><span class="tb"><button class="min" title="collapse">_</button></span></div>
+    <div class="wbody botbox">
+      <b>bot-ready.</b> every action is a normal DOM event plus a stable JS bridge.
+      <span class="ln"><code>GraphShot.findMatch()</code> joins the hosted queue.</span>
+      <span class="ln"><code>GraphShot.planShot()</code> returns a valid aim.</span>
+      <span class="ln"><code>GraphShot.submitShot({expression, lock:true})</code> commits it.</span>
+      <span class="ln tiny">full reference in <b>help + bot api</b> · headless example: <code>bot.example.js</code></span>
+    </div>
+  </div>
+</div>
+
+<!-- ================= QUEUE ================= -->
+<div id="queue" class="screen win hidden">
+  <div class="tbar"><span class="ttl">matchmaker.exe</span><span class="tb"><button class="min" title="collapse">_</button><button data-go="home" title="close">&times;</button></span></div>
+  <div class="wbody">
+    <div class="topbar">
+      <button class="back" data-go="home">&larr; menu</button>
+      <h1 class="grow">finding a lobby</h1>
+      <span id="qrating" class="muted"></span>
+    </div>
+    <div class="qwrap">
+      <div class="qradar" aria-hidden="true">
+        <div class="sweep"></div>
+        <div class="blip" style="left:34%;top:28%"></div>
+        <div class="blip" style="left:66%;top:50%;animation-delay:.7s"></div>
+        <div class="blip" style="left:44%;top:70%;animation-delay:1.2s"></div>
+        <div class="blip" style="left:58%;top:20%;animation-delay:1.7s"></div>
+      </div>
+      <div class="qmain">
+        <span id="qtimer">0:30</span>
+        <div id="qtext">scanning the ladder…</div>
+        <div class="qmeta" id="qmeta">10 players per lobby · empty seats become skill-matched bots</div>
+        <div class="qslots" id="qslots"></div>
+        <div class="qacts">
+          <button id="qcancel" class="btn">cancel queue</button>
+          <span style="align-self:center;font-size:11px;color:var(--mut)" id="qcount"></span>
+        </div>
+      </div>
+    </div>
+    <div class="qalgo">
+      <b>hosted rooms · rating snake.</b> every 30s the match server sorts the whole queue by skill rating, deals
+      everyone into rooms in a snake draft, then tops each room up with bots so it always holds exactly 10.
+      60 queued humans = 6 rooms of 10. 3 humans = those 3 + 7 bots. Everybody in a room gets the same map,
+      the same clock and the same simultaneous shot resolution.
+    </div>
+  </div>
+</div>
+
+<!-- ================= GAME (ranked + practice) ================= -->
+<div id="game" class="screen win hidden">
+  <div class="tbar"><span class="ttl" id="gwin">ranked.exe</span><span class="tb"><button class="min" title="collapse">_</button><button data-go="home" title="close">&times;</button></span></div>
+  <div class="wbody">
+  <div class="topbar">
+    <button class="back" data-go="home">&larr; menu</button>
+    <h1 id="gtitle" class="grow">ranked</h1>
+    <span id="stats"></span>
+  </div>
+
+  <div id="rankedhud" class="hidden">
+    <div class="rankedbar">
+      <span class="phasebadge" id="phasebadge">code</span>
+      <span id="ctimer">2:00</span>
+      <span id="feed" class="feed" style="display:flex;flex:1;margin:0"></span>
+      <span id="lobbylabel">lobby</span>
+    </div>
+    <div class="roster" id="roster"></div>
+  </div>
+
+  <div id="settings" class="settings">
+    <label>function type
+      <select id="s-mode">
+        <option value="normal">f(x)</option>
+        <option value="ode1">y' = f(x, y)</option>
+        <option value="ode2">y'' = f(x, y, y')</option>
+      </select>
+    </label>
+    <label title="What x means inside your equation">x is measured from
+      <select id="s-rel"><option value="abs">map origin (graphwar)</option><option value="rel">the player</option></select>
+    </label>
+    <label>enemies <input id="s-en" type="number" min="0" max="8" value="2"></label>
+    <label title="Enemies inside a derivative perimeter">shields <input id="s-sh" type="number" min="0" max="4" value="1"></label>
+    <label title="Parry bots: enemies with a field that bends your shot back at you">parry bots <input id="s-bt" type="number" min="0" max="3" value="1"></label>
+    <label title="Each ally deploys one assist field. You write its equation.">allies <input id="s-al" type="number" min="0" max="12" value="2"></label>
+    <label>obstacles <input id="s-ob" type="number" min="0" max="14" value="5"></label>
+    <button id="b-new">new map</button>
+    <button id="b-retry">retry map</button>
+  </div>
+
+  <div id="tut" class="hidden">
+    <b id="tut-title"></b>
+    <div id="tut-text"></div>
+    <div class="row">
+      <button id="tut-hint">hint</button>
+      <span id="tut-hinttext"></span>
+      <span style="flex:1"></span>
+      <button id="tut-next" disabled>next &rarr;</button>
+    </div>
+  </div>
+
+  <div class="canvaswrap"><canvas id="cv" width="1000" height="600"></canvas></div>
+
+  <div class="legend" id="practicelegend">
+    <span><i style="background:#ff732d"></i>you</span>
+    <span><i style="background:#3b5bff"></i>enemy</span>
+    <span><i style="background:#3fcf6b"></i>ally + assist field</span>
+    <span><i style="background:#ff4b3a"></i>shield (derivative)</span>
+    <span><i style="background:#9a6bff"></i>parry bot field</span>
+    <span><i style="background:#141211;border-radius:0"></i>obstacle</span>
+  </div>
+  <div class="legend hidden" id="rankedlegend">
+    <span>10-player free-for-all</span><span>·</span><span>every cannon fires at the same instant</span><span>·</span>
+    <span>shoot toward the facing arrow</span><span>·</span><span>dead shooters lose their beam</span>
+  </div>
+
+  <div class="bar">
+    <div class="fx">
+      <label id="flabel">f(x) =</label>
+      <input id="expr" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="none" placeholder="0.3*x   or   sin(x)*5">
+      <span class="angle hidden" id="angwrap">angle&deg; <input id="angle" type="number" value="0" min="-85" max="85"></span>
+      <span class="off" id="off">+ 0.000</span>
+    </div>
+    <button id="fire">fire!</button>
+  </div>
+
+  <div id="fields" class="fieldbox hidden">
+    <div class="fieldhead">assist fields: one equation per ally. inside a field <code>x</code> = distance travelled in it, <code>y</code> = heading angle (rad, 0 = right, + = up). the result is how fast the shot turns (+ = left/up, &minus; = right/down). empty = no steering.</div>
+    <div id="fieldrows"></div>
+  </div>
+
+  <div class="pads">
+    <div class="pad">
+      <button data-k="clear">C</button><button data-i="pi">π</button><button data-i="e">e</button>
+      <button data-i="1">1</button><button data-i="2">2</button><button data-i="3">3</button>
+      <button data-i="4">4</button><button data-i="5">5</button><button data-i="6">6</button>
+      <button data-i="7">7</button><button data-i="8">8</button><button data-i="9">9</button>
+      <button data-i="(">(</button><button data-i="0">0</button><button data-i=".">.</button>
+      <button data-k="left">←</button><button data-k="right">→</button><button data-k="back">⌫</button>
+    </div>
+    <div class="pad">
+      <button data-i="abs(">abs</button><button data-i="ln(">ln</button><button data-i="sqrt(">√</button>
+      <button data-i="sin(">sin</button><button data-i="cos(">cos</button><button data-i="tan(">tan</button>
+      <button data-i="*">*</button><button data-i="/">/</button><button data-i="exp(">exp</button>
+      <button data-i="+">+</button><button data-i="-">-</button><button data-i="^">^</button>
+      <button data-i="x">x</button><button data-i="y" data-needs="y">y</button><button data-i="y'" data-needs="dy">y'</button>
+      <button data-i="log(">log</button><button data-i="(">(</button><button data-i=")">)</button>
+    </div>
+  </div>
+
+  <div class="status" id="status"></div>
+  </div>
+</div>
+
+<!-- ================= RESULTS ================= -->
+<div id="results" class="results hidden" role="dialog" aria-modal="true" aria-labelledby="resulttitle">
+  <div class="resultcard">
+    <h2 id="resulttitle">lobby complete</h2>
+    <div class="sub" id="resultsub"></div>
+    <div id="resultbody"></div>
+    <div class="resultacts">
+      <button class="btn pri" id="b-again">play again</button>
+      <button class="btn" id="b-results-board">leaderboard</button>
+      <button class="btn" id="b-results-home">menu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= HELP ================= -->
+<div id="help" class="screen win hidden">
+  <div class="tbar"><span class="ttl">help.txt</span><span class="tb"><button class="min" title="collapse">_</button><button data-go="home" title="close">&times;</button></span></div>
+  <div class="wbody">
+  <div class="topbar"><button class="back" data-go="home">&larr; menu</button><h1 class="grow">how it works</h1></div>
+  <div class="card">
+    <h3 style="margin-top:0">Ranked: hosted 10-player free-for-all</h3>
+    Press <b>Ranked</b>. Your browser joins the <b>match server</b>, which gives the whole queue a <b>30 second</b>
+    window and then forms rooms of exactly <b>10 soldiers</b>. Every real human in that window is dealt into the same
+    set of rooms; any empty seat is filled by a server bot whose rating is close to the room average. 60 queued humans
+    become 6 rooms of 10; 3 real humans become one room of 3 + 7 bots. The room is authoritative: one server owns the
+    map, the clock, the locked equations, the beams and the scores.<br><br>
+    Rooms are dealt with a <b>rating snake draft</b>: sort everyone by skill, deal in serpentine order, so room
+    averages stay close. It is the same algorithm regardless of queue size.<br><br>
+    During the <b>2 minute code phase</b> everyone writes an equation. Lock in early and the room starts as soon as the
+    last player (or bot) is ready; otherwise the server locks every remaining cannon at 0:00.<br><br>
+    <b>Every cannon fires at the same instant.</b> The beams then travel in real time. If a player is killed, their beam
+    is invalid from that instant: any part of their curve that has not arrived yet disappears. A straight line that
+    reaches a sine-wave shooter before their wave reaches you kills the wave too. Score is not zero-sum: kills, survival
+    time and placement all pay.
+
+    The lobby is a multi-round survival fight: each soldier has 100 health, and each landed hit deals 34 damage.
+    Survivors reposition at least 6 units apart, then a new round starts. The lobby ends when one soldier/bot is left
+    standing. Dead shooters’ beams die with them, and cannons can leave the vertical map and come back.
+
+    <h3>Ranked rules + scoring</h3>
+    <table>
+      <tr><th>Thing</th><th>Value</th></tr>
+      <tr><td>Lobby size</td><td>Exactly 10, always. Bots top up empty seats.</td></tr>
+      <tr><td>Queue window</td><td>30 seconds, skill-based snake draft.</td></tr>
+      <tr><td>Code window</td><td>Up to 2 minutes. All-ready starts early; timeout auto-locks.</td></tr>
+      <tr><td>Beam speed</td><td>24 map units / second. Everybody launches at t = 0.</td></tr>
+      <tr><td>Health</td><td>100 max. Each landed hit deals 34 damage (3 hits to eliminate).</td></tr>
+      <tr><td>Respawn</td><td>Survivors reposition with a minimum 6-unit gap; next round starts automatically.</td></tr>
+      <tr><td>Kill</td><td>+100 points, credited to whoever's beam arrives.</td></tr>
+      <tr><td>Survival</td><td>+3 points per second alive.</td></tr>
+      <tr><td>Placement bonus</td><td>1st +300, 2nd +220, 3rd +160, then 110 / 70 / 40 / 25 / 15 / 10 / 5.</td></tr>
+      <tr><td>Minimum payout</td><td>Every loser still keeps kill points, survival points and a placement bonus.</td></tr>
+      <tr><td>Rating</td><td>Elo vs. the rest of the lobby. Everyone starts at 1000.</td></tr>
+    </table>
+    In ranked, <code>x</code> is always the distance in front of your cannon and each cannon fires toward the centre.
+    The left side faces right, the right side faces left. Enemies behind your facing direction cannot be hit directly.
+
+    <h3>Bot API (browser)</h3>
+    Every UI action also exists on <code>window.GraphShot</code>. A browser bot can use these methods, or the same
+    stable DOM ids/events. State is broadcast as <code>window</code> events named <code>graphshot:state</code> and
+    <code>graphshot:phase</code>.
+    <pre><b>await GraphShot.findMatch()</b>            // join the hosted queue; resolves when the code phase starts
+<b>GraphShot.getState()</b>                 // JSON-safe snapshot (phase, connected, match, queue, result)
+<b>GraphShot.getMap()</b>                   // soldiers, terrain, your local frame
+<b>GraphShot.getConnection()</b>            // server url, status, latency
+<b>GraphShot.setName("my-bot")</b>
+<b>GraphShot.planShot()</b>                 // { expression, angle, targetSlot } best candidate
+<b>GraphShot.submitShot({expression:"0.3*x"})</b>
+<b>GraphShot.submitShot({expression:"0.3*x", lock:true})</b>
+<b>GraphShot.lockIn()</b>                   // ready now
+<b>await GraphShot.waitForPhase("result", 180000)</b>
+<b>GraphShot.on("state", fn)</b>            // returns unsubscribe; also "phase" and "error"
+<b>GraphShot.getLeaderboard()</b>
+<b>GraphShot.getOptions(), setOptions({...})</b>  // practice options
+<b>GraphShot.navigate("home")</b>
+GraphShot.version</pre>
+    The DOM is bot-friendly too: <code>#expr</code>, <code>#fire</code>, <code>#s-mode</code>, <code>#s-rel</code>,
+    <code>#s-en</code>, <code>#s-sh</code>, <code>#s-bt</code>, <code>#s-al</code>, <code>#s-ob</code>,
+    <code>#b-new</code>, <code>#b-retry</code>, <code>#nav-play</code>, <code>#qcancel</code>. Inputs fire normal
+    <code>input</code>/<code>change</code> events.<br><br>
+    <b>Headless bots:</b> connect to the same server over <code>ws(s)://your-host/ws</code> and speak JSON:
+    <code>hello</code> → <code>queue</code> → wait for a <code>state</code> with phase <code>code</code> →
+    <code>submit</code> (optionally <code>lock:true</code>). Full protocol in <code>BOT_API.md</code>; a complete
+    runnable client is <code>bot.example.js</code>.<br><br>
+    <b>Fast local testing:</b> start the server with <code>FAST=1 npm start</code> for a 3s queue and 10s code
+    window. <code>GraphShot.setClock()</code> only works when the server runs with <code>ALLOW_CLOCK=1</code>.
+
+    <h3>The goal (practice + tutorial)</h3>
+    Your soldier (orange) stands somewhere on the map. Type an equation; when you press <b>Fire!</b> the graph of that equation is drawn
+    starting <i>at your soldier</i>, travelling to the right. Every enemy (blue) the curve touches is killed. Kill all enemies to win.
+
+    <h3>The map</h3>
+    A normal Cartesian plane: <code>x</code> from −25 to 25 (left → right), <code>y</code> from −15 to 15 (bottom → top). The thick lines are the axes
+    and each small square is 1 unit. Dark blobs are <b>obstacles</b>: if your curve touches one the shot ends there and blows a hole in it.
+    Green soldiers are your <b>allies</b> — your shots kill them too.
+
+    <h3>How your equation becomes a shot</h3>
+    The curve is always <b>shifted up or down so that it passes through your soldier</b>. That shift is the number shown at the right of the input (e.g. <code>+ 6.137</code>).
+    So only the <i>shape</i> of your function matters — not where it would normally cross the axes.<br><br>
+    Important: <code>x</code> is the real x‑coordinate on the map, <u>not</u> the distance from you. If you stand at x = −20, then <code>x^2</code> already
+    has a steep slope at your feet. To get shapes centred on yourself, use <code>(x+20)</code> (if you stand at −20) instead of <code>x</code>.
+    In ranked, <code>x</code> is always measured from your cannon, so <code>0.3*x</code> is a straight line no matter which side you spawn on.
+
+    <h3>Syntax</h3>
+    <table>
+      <tr><th>Type</th><th>What you can write</th></tr>
+      <tr><td>Operators</td><td><code>+ − * / ^</code> and <code>( )</code>. Power also works as <code>**</code>. <code>2^3^2</code> = 2^(3^2).</td></tr>
+      <tr><td>Functions</td><td><code>abs ln log sqrt sin cos tan exp</code> — always with brackets: <code>sin(x)</code>. <code>ln</code> is natural log, <code>log</code> is base 10.</td></tr>
+      <tr><td>Constants</td><td><code>pi</code> (or π), <code>e</code></td></tr>
+      <tr><td>Variables</td><td><code>x</code> always. <code>y</code> and <code>y'</code> only in the differential‑equation modes.</td></tr>
+      <tr><td>Shortcuts</td><td>Implicit multiplication: <code>2x</code>, <code>3(x+1)</code>, <code>sin(x)cos(x)</code>. Trig works in <b>radians</b>.</td></tr>
+    </table>
+
+    <h3>Handy shapes</h3>
+    <table>
+      <tr><th>Equation</th><th>What it does</th></tr>
+      <tr><td><code>0</code></td><td>Perfectly flat shot.</td></tr>
+      <tr><td><code>0.3*x</code></td><td>Straight line with slope 0.3 (up 3 for every 10 to the right).</td></tr>
+      <tr><td><code>(ty−py)/(tx−px)*x</code></td><td>Straight line through you at (px, py) and a target at (tx, ty): just compute the slope.</td></tr>
+      <tr><td><code>-0.0255*(x+20)*(x-8)</code></td><td>An arch: zero at x = −20 and x = 8, peak between. Great for hopping over obstacles.</td></tr>
+      <tr><td><code>3*sin(x/2)</code></td><td>A wave — passes through several enemies in a row.</td></tr>
+      <tr><td><code>5*sin(x)/x</code>‑style</td><td>Shapes that decay; careful, <code>x</code> = 0 is undefined.</td></tr>
+    </table>
+    <b>Tip:</b> to make a curve hit several points, add terms that vanish at the points you already have, e.g. <code>(x−a)(x−b)</code> is 0 at both a and b.
+
+    <h3>Special zones (practice)</h3>
+    <table>
+      <tr><td><span style="color:#c8321f"><b>Shield</b></span><br>red dashed circle</td>
+          <td>Around a shielded enemy. The first time your curve touches it, your curve is <b>replaced by its derivative</b> f′(x) — the slope function of what you typed —
+          lifted so it continues from the contact point (no jump). A parabola becomes a line, a sine becomes a cosine, a straight line becomes flat. Works in every mode
+          (in the differential modes the "curve" is the integrated path). Each shield triggers once per shot; the shield disappears when its enemy dies.</td></tr>
+      <tr><td><span style="color:#6a2fd6"><b>Parry bot</b></span><br>purple circle</td>
+          <td>A bot that doesn't attack — it defends. Its parry field sits in front of it. Anything that enters is <b>bent back toward you</b>, and your own shot can kill you or your allies.
+          Go around the field (over or under) to reach the bot behind it. Kill the bot and the field vanishes.</td></tr>
+      <tr><td><span style="color:#127a38"><b>Assist field</b></span><br>green dashed circle</td>
+          <td>Every ally deploys one (there's no limit on how many allies you can have). If your shot enters it, the shot is <b>caught</b> and steered by <i>the equation you type in that ally's field box</i>:
+          inside the field <code>x</code> = distance travelled in it, <code>y</code> = heading angle in radians (0 = right, + = up), and the value you give is the <b>turn rate</b> (+ turns left/up, − right/down).
+          <code>0.7</code> = steady left curl, <code>sin(x*3)</code> = wiggle, <code>2*(1.57−y)</code> = swing toward straight up. After the shot leaves a field it flies <b>straight</b> along its exit heading,
+          so it can be caught by another field — chain fields to bounce one shot through many enemies. Each field catches a shot once. Empty equation = no steering.</td></tr>
+    </table>
+    A caught shot is no longer a function of x: it can go backwards or down. A shot redirected by any field <u>can</u> hit you.
+
+    <h3>What ends a practice shot</h3>
+    <ul>
+      <li>The curve leaves the map.</li>
+      <li>It touches an obstacle (the obstacle gets a crater).</li>
+      <li>The function becomes undefined — e.g. <code>ln(−1)</code>, <code>1/0</code> or <code>sqrt</code> of a negative.</li>
+    </ul>
+    Soldiers do <u>not</u> stop a shot — it carries on and can kill several in one go (allies included). If a field sends your shot back into <b>you</b>, you lose that round.
+
+    <h3>Function types</h3>
+    <table>
+      <tr><td><b>f(x)</b></td><td>The default. The graph of <code>y = f(x)</code>, shifted to start at you.</td></tr>
+      <tr><td><b>y' = f(x, y)</b></td><td>You give the <i>slope</i> of the path at every point; the game integrates it from your position. <code>y' = 0.1</code> is a line with slope 0.1; <code>y' = -y/10</code> bends the path back toward the x‑axis. You can use <code>x</code> and <code>y</code> (the height of the path right now).</td></tr>
+      <tr><td><b>y'' = f(x, y, y')</b></td><td>You give the <i>curvature</i>. You also set a starting <b>angle</b> (degrees, 0 = flat, positive = up). <code>y'' = -0.05</code> with angle 30° fires a parabolic arc. You can use <code>x</code>, <code>y</code> and <code>y'</code>.</td></tr>
+    </table>
+
+    <h3>Error messages</h3>
+    <table>
+      <tr><td><code>Use parentheses</code></td><td>Write <code>sin(x)</code>, not <code>sin x</code>.</td></tr>
+      <tr><td><code>Missing ')'</code></td><td>Brackets don't match.</td></tr>
+      <tr><td><code>undefined at the player's x</code></td><td>Your function breaks exactly where you stand (e.g. <code>1/(x+20)</code> while standing at −20).</td></tr>
+      <tr><td><code>can't be used in this mode</code></td><td>You used <code>y</code> or <code>y'</code> in f(x) mode.</td></tr>
+    </table>
+  </div>
+  </div>
+</div>
+
+<!-- ================= LEADERBOARD ================= -->
+<div id="board" class="screen win hidden">
+  <div class="tbar"><span class="ttl">leaderboards.dat</span><span class="tb"><button class="min" title="collapse">_</button><button data-go="home" title="close">&times;</button></span></div>
+  <div class="wbody">
+  <div class="topbar"><button class="back" data-go="home">&larr; menu</button><h1 class="grow">leaderboards</h1><button id="b-refresh-board" class="btn" style="font-size:9px">refresh</button></div>
+  <div id="boardbody"></div>
+  </div>
+</div>
+
+<div id="task"><button class="start" data-go="home">start</button><span class="tl" id="tasklabel">desktop</span><span class="usr" id="taskuser">user@graphshot</span><span class="netstat" id="netstat" data-status="offline">○ offline</span><span class="ck" id="clock"></span></div>
+
+<script src="js/core.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/bots.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/net.js"></script>
+<script src="js/ranked.js"></script>
+</body>
+</html>

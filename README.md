@@ -1,78 +1,76 @@
-# Graphshot Online — Multiplayer Math Artillery Arena
+# GraphShot
 
-Graphshot is a competitive, simultaneous-resolution multiplayer math artillery game. Players (or automated bots) program mathematical curve equations `f(x)` for their cannons arranged on a circular arena. When the coding phase ends, all cannons fire at once: shots follow their mathematical trajectories, and a player who is hit and destroyed ceases firing, invalidating any later beam collisions from their cannon.
+A hosted 10-player math-artillery game. Real multiplayer rooms, skill matchmaking,
+bot-filled empty seats, simultaneous beam resolution and a bot-friendly API.
 
-Live link (Solo sandbox): [https://math-eqn-bot.vercel.app/](https://math-eqn-bot.vercel.app/)
+## Play
 
----
-
-## Architecture Overview
-
-- **`server.py`**: Authoritative FastAPI server handling PostgreSQL storage, rCTF team authentication, round management, matchmaking, autorating, and match lifecycle.
-- **`engine.py`**: Pure, deterministic combat and equation engine. Bounded parsing without `eval`/`exec`, implicit multiplication, resilient arithmetic, and simultaneous volley resolution.
-- **`public/index.html`**: Multiplayer arena web client featuring real-time lobby polling, live trajectory aiming preview, circular arena canvas, animated volley beams, and live scoreboards.
-- **`public/solo.html`**: Standalone single-player sandbox and 7-level derivative tutorial.
-- **`bots/`**: Bot clients in Python (`bots/python_bot.py`) and Node.js (`bots/node_bot.mjs`) for automated tournament competition.
-- **`tests/`**: Full test suites for engine physics and server integration.
-
----
-
-## Getting Started
-
-### 1. Prerequisites
-- Python 3.10+
-- (Optional) Node.js 20+ for the Node bot client
-- (Production) PostgreSQL database & rCTF instance
-
-### 2. Install Dependencies
 ```bash
-pip install -r requirements.txt
+npm install
+npm start
 ```
 
-### 3. Configure Environment
-Copy `.env.example` to `.env` and fill in your configuration:
+Open <http://127.0.0.1:8787>.
+
+Fast local testing:
+
 ```bash
-cp .env.example .env
+PORT=8787 FAST=1 npm start
 ```
 
-Key environment variables:
-- `DATABASE_URL`: PostgreSQL connection string (e.g., AWS RDS or local Postgres).
-- `RCTF_BASE_URL`: Base URL of your rCTF instance.
-- `APP_BASE_URL`: Public URL of your Graphshot app (for OAuth callback).
-- `RCTF_CLIENT_ID` / `RCTF_CLIENT_SECRET`: OAuth2 credentials configured in rCTF.
-- `ROUND_PERIOD_SECONDS`: Time interval between round starts (default: `300`).
-- `ENTRY_WINDOW_SECONDS`: Time window to reserve seats in a round (default: `60`).
-- `CODING_SECONDS`: Time window to program cannon equations (default: `120`).
-- `COOKIE_SECURE`: Set to `true` behind HTTPS; `false` for local HTTP.
-- `DEV_AUTH`: Set to `true` to enable instant dev login without an external rCTF instance.
+Then open <http://127.0.0.1:8787/?name=you&token=you>. `?server=ws://…` overrides the
+match server URL for proxies.
 
-### 4. Run the Server
+## Ranked in one paragraph
+
+The queue gives human players a 30 second matchmaking window, sorts everyone by skill
+rating and deals a rating-snake draft into rooms of exactly 10. Empty seats in a room
+become bots whose rating is near the room average. Rooms are authoritative and hosted by
+the Node server in `server/` (`npm start`).
+
+Gameplay: 2 minute code phase (2:00 ranked, 10s with `FAST=1`) where every cannon writes
+an equation and locks in; then all beams fire simultaneously for ~1-2 seconds.
+
+- Health: every soldier starts with 100 HP; each landed hit deals 34 damage. The lobby
+  runs multiple rounds; survivors are repositioned at least 6 units apart, then the next
+  round starts. The lobby ends when one soldier/bot is left standing.
+- Simultaneous resolution: all beams are resolved together, chronological, hits in the
+  same instant land together; a dead shooter’s beam ends at death.
+- Cannons can leave the vertical map area and come back, so parabola/quadratic equations
+  work.
+- Payouts: kills, survival time and placement bonus; losers still earn points.
+
+## Bots
+
+Write your own bot:
+
 ```bash
-python server.py
-```
-Or via uvicorn:
-```bash
-uvicorn server:app --host 0.0.0.0 --port 3000
-```
-
-Visit [http://localhost:3000](http://localhost:3000) for the Multiplayer Arena, or [http://localhost:3000/solo](http://localhost:3000/solo) for the solo sandbox and tutorial.
-
-### 5. Run the Bots
-Automated bot clients can participate alongside human players:
-- **Python Bot**: `python bots/python_bot.py`
-- **Node.js Bot**: `node bots/node_bot.mjs`
-
-### 6. Run Tests
-```bash
-python -m unittest discover tests
+node bot.example.js
 ```
 
----
+Or use the browser bridge:
 
-## Docker Deployment
-
-To build and run in Docker:
-```bash
-docker build -t graphshot-server .
-docker run -p 3000:3000 --env-file .env graphshot-server
+```js
+await GraphShot.findMatch();
+await GraphShot.waitForPhase("code");
+const plan = GraphShot.planShot();
+GraphShot.submitShot({ expression: plan.expression, lock: true });
+await GraphShot.waitForPhase("result", 180000);
 ```
+
+Full protocol, state fields, map semantics and planning notes: [BOT_API.md](BOT_API.md).
+
+## Tests
+
+```bash
+npm test          # hosted rooms: 3 humans + bot fill, 60 humans -> 6 rooms, reconnect
+node test/smoke.js
+```
+
+## Deploy
+
+```bash
+PORT=8080 npm start
+```
+
+Server env vars: `PORT`, `HOST`, `DATA_DIR`, `FAST`, `QUEUE_MS`, `CODE_MS`, `COUNTDOWN_MS`, `ALLOW_CLOCK`.
