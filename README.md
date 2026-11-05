@@ -3,6 +3,14 @@
 A hosted 10-player math-artillery game. Real multiplayer rooms, skill matchmaking,
 bot-filled empty seats, simultaneous beam resolution and a bot-friendly API.
 
+## Gameplay Preview
+
+| 10-Player Ranked Battlefield | Skill Matchmaking Radar |
+| :---: | :---: |
+| ![Ranked 10-Player Battlefield](screenshots/03-ranked-10player-battlefield.png) | ![Radar Skill Matchmaker](screenshots/02-matchmaking-radar.png) |
+| **Live Roster & Status Tracking** | **Sandbox Practice Mode** |
+| ![Ranked Roster Overview](screenshots/04-ranked-roster-overview.png) | ![Practice Sandbox](screenshots/05-practice-sandbox.png) |
+
 ## Play
 
 ```bash
